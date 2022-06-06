@@ -1,6 +1,6 @@
 import os
 
-EXTENTION_VIDEO = ["avi", "mp4", "wmv", "mkv", "rmvb", "m4v", "mov", "iso", "ts", "mpeg", "vob"]
+EXTENTION_VIDEO = ["avi", "mp4", "wmv", "mkv", "rmvb", "m4v", "mov", "iso", "ts", "mpeg", "vob", "mpg"]
 
 def _file_extention(path):
     return path.split('.')[-1].lower()

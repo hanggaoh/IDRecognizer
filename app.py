@@ -1,11 +1,7 @@
 import os
 import shutil
 from findVideo import find_all_videos
-from classify import fix_name, new_Name
-
-source_folders = ["E:\\迅雷下载"]
-source_Folder_Only_Copy = ["G:\\Videos"]
-destination = "E:\\AV"
+from classify import new_Name
 
 def move_Or_Copy(source, dist, MOVE = True):
     videos = []
@@ -23,13 +19,9 @@ def move_Or_Copy(source, dist, MOVE = True):
             shutil.copy(vid, new_path)
     
 if __name__ == "__main__":
-    # move_Or_Copy(source_folders, destination, MOVE = True)
-    # move_Or_Copy(["C:\\迅雷下载"], "H:\\AV", MOVE=True)
-    # move_Or_Copy(["D:\\迅雷下载"], "D:\\AV", MOVE=True)
-    # move_Or_Copy(["G:\\迅雷下载"], "G:\\Videos", MOVE=True)
-    # move_Or_Copy(["G:\\"], "E:\\Videos\\AV", MOVE=False)
     # shutil.copytree("E:\\Videos\\TVs", "G:\\Videos\\TVs")
     # shutil.copytree("E:\\Videos\\Movies", "G:\\Videos\\Movies")
     # shutil.copytree("E:\\Music", "G:\\Musics")
-    move_Or_Copy(source_folders, destination)
+    move_Or_Copy(["D:\\download"], "D:\\Av")
+    move_Or_Copy(["C:\\迅雷下载", "E:\\download"], "E:\\Videos\\Active")
 
