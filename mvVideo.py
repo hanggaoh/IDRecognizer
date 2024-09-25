@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import sys
 
 from matcher.matcher import match_and_format
 from utils.file import check_file_in_dir
@@ -53,7 +54,18 @@ def moveVideos(video_files, destination_dir):
         shutil.move(os.path.join(original_dir, file_name), os.path.join(destination_dir, destination_name_remove_duplicate))
         logger.debug("Moving complete")
 
+
+def findMoveVideos(source_folder, destination_folder):
+    video_files = find_videos(source_folder)
+    moveVideos(video_files, destination_folder)
+    
 if __name__ == "__main__":
-    video_files = find_videos('D://迅雷下载')
-    destination_dir = "D://new"
-    moveVideos(video_files, destination_dir)
+    if len(sys.argv) < 3:
+        print("Usage: script.py <source_folder> <destination_folder>")
+        sys.exit(1)
+    
+    source_folder = sys.argv[1]
+    destination_folder = sys.argv[2]
+    
+    findMoveVideos(source_folder, destination_folder)
+
