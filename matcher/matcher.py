@@ -13,7 +13,7 @@ def match_and_format(text, pattern_dict):
     results = []
     
     for pattern, format_pattern in pattern_dict.items():
-        match = re.search(pattern, text)
+        match = re.search(pattern, text, re.IGNORECASE)
         if match:
             formatted_result = re.sub(pattern, format_pattern, match.group(0))
             results.append(formatted_result)
