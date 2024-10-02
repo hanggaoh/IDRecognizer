@@ -2,13 +2,15 @@
 
 # Define the paths
 parent_folder="/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload"
-destination_folder_on_host="/Users/gh/Movies/.a"
+destination_folder_on_host="/media/pi/ssd"
 temp_file_list="cat"
 sanitize_script="./formatFile.py"
+format_flag=false
 
-while getopts "d:" opt; do
+while getopts "d:f" opt; do
   case ${opt} in
     d ) destination_folder_on_host="$OPTARG" ;;
+    f ) format_flag=true ;;
     * ) 
       echo "Usage: $0 [-d destination_folder]"
       exit 1;; 
@@ -40,15 +42,20 @@ EOF
 # Now read the file paths and pull each file to the host machine
 while IFS= read -r video_file <&3; do
   base_filename=$(basename "$video_file")
-  corrected_path=$(python3 "$sanitize_script" "$destination_folder_on_host" "$base_filename")
+
+  if [ "$format_flag" = true ]; then
+    corrected_path=$(python3 "$sanitize_script" "$destination_folder_on_host" "$base_filename")
+  else
+    corrected_path="$destination_folder_on_host/$base_filename"
+  fi
+
   sanitized_filename=$(echo "$corrected_path" | sed 's/[][()|&;!]/_/g')
-  
   echo "Pulling $video_file to $sanitized_filename"
   adb pull "$video_file" "$sanitized_filename"
   # Check if the adb pull command was successful
   if [ $? -eq 0 ]; then
     echo "Successfully pulled $video_file. Deleting from device."
-    adb shell rm "$video_file"
+    adb shell rm "'$video_file'"
   else
     echo "Failed to pull $video_file. Skipping deletion."
   fi
