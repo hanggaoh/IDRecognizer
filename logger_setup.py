@@ -1,11 +1,17 @@
 import logging
 import datetime
+import os
+
+LOGS_FOLDER = "logs"
+
+if not os.path.exists(LOGS_FOLDER):
+    os.makedirs(LOGS_FOLDER)
 
 # Create and configure logger
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # Create and configure logger with dynamic filename based on timestamp
-log_filename = f"logs/logfile_{timestamp}.log"
+log_filename = f"{LOGS_FOLDER}/logfile_{timestamp}.log"
 
 logging.basicConfig(filename=log_filename,
                     format='%(asctime)s %(message)s',
