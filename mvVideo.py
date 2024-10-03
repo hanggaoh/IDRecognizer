@@ -35,8 +35,19 @@ def moveVideos(video_files, destination_dir):
         destination_name_remove_duplicate = check_file_in_dir(os.path.join(original_dir, file_name), destination_dir, destination_name, True)
         logger.debug(f"Origin file: {os.path.join(original_dir, file_name)}")
         logger.debug(f"Destin file: {os.path.join(destination_dir, destination_name_remove_duplicate)}")
-        shutil.move(os.path.join(original_dir, file_name), os.path.join(destination_dir, destination_name_remove_duplicate))
-        logger.debug("Moving complete")
+        try:
+            # Copy the file with metadata preservation
+            shutil.copy2(os.path.join(original_dir, file_name), os.path.join(destination_dir, destination_name_remove_duplicate))
+            # Remove the original file after successful copy
+            os.remove(os.path.join(original_dir, file_name))
+            logger.debug("Moving complete")
+        except (KeyboardInterrupt, Exception) as e:
+            # On any exception (including Ctrl+C), remove the copied file
+            dest_path = os.path.join(destination_dir, destination_name_remove_duplicate)
+            if os.path.exists(dest_path):
+                os.remove(dest_path)
+            logger.error(f"An error occurred: {e}")
+            raise  
 
 
 def findMoveVideos(source_folder, destination_folder):
