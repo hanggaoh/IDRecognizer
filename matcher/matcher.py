@@ -1,5 +1,8 @@
 
 import re
+from logger_setup import get_logger
+
+logger = get_logger()
 
 def match_and_format(text, pattern_dict):
     """
@@ -15,7 +18,12 @@ def match_and_format(text, pattern_dict):
     for pattern, format_pattern in pattern_dict.items():
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            formatted_result = re.sub(pattern, format_pattern, match.group(0))
+            logger.debug(f"found {match.group(0)} with {pattern}")
+            if callable(format_pattern):
+                formatted_result = format_pattern(match)
+            else:
+                formatted_result = re.sub(pattern, format_pattern, match.group(0))
+            logger.debug(f"formatted_result: {formatted_result}")
             results.append(formatted_result)
     
     return results
