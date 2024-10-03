@@ -36,19 +36,26 @@ def moveVideos(video_files, destination_dir):
         logger.debug(f"Origin file: {os.path.join(original_dir, file_name)}")
         logger.debug(f"Destin file: {os.path.join(destination_dir, destination_name_remove_duplicate)}")
         try:
+            original_path = os.path.join(original_dir, file_name)
+            destination_path = os.path.join(destination_dir, destination_name_remove_duplicate)
+
+            total, used, free = shutil.disk_usage(destination_dir)
+            file_size = os.path.getsize(original_path)
+
+            if file_size > free:
+                raise OSError("Not enough disk space to move the file.")
+
             # Copy the file with metadata preservation
-            shutil.copy2(os.path.join(original_dir, file_name), os.path.join(destination_dir, destination_name_remove_duplicate))
+            shutil.copy2(original_path, destination_path)
+            
             # Remove the original file after successful copy
-            os.remove(os.path.join(original_dir, file_name))
+            os.remove(original_path)
             logger.debug("Moving complete")
         except (KeyboardInterrupt, Exception) as e:
-            # On any exception (including Ctrl+C), remove the copied file
-            dest_path = os.path.join(destination_dir, destination_name_remove_duplicate)
-            if os.path.exists(dest_path):
-                os.remove(dest_path)
+            if os.path.exists(destination_path):
+                os.remove(destination_path)
             logger.error(f"An error occurred: {e}")
-            raise  
-
+            raise
 
 def findMoveVideos(source_folder, destination_folder):
     video_files = find_videos(source_folder)
