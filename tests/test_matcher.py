@@ -21,7 +21,7 @@ class TestMatchAndFormat(unittest.TestCase):
             "giro-92_01.wmv": ['Giro-092_01'],
             "race-45_cd1.mp4": ['Race-045_01'],
             "event-03D.mkv": ['Event-003_D'],
-            "tour-129cd1.MP4": ['Tour-129_01', 'tour-129c']
+            "tour-129cd1.MP4": ['Tour-129_01', 'Tour-129_c']
         }
         
         for original, expected in test_cases.items():
