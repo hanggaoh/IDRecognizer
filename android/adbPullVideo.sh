@@ -58,6 +58,10 @@ while IFS= read -r video_file <&3; do
     adb shell rm "'$video_file'"
   else
     echo "Failed to pull $video_file. Skipping deletion."
+    if [ -f "$sanitized_filename" ]; then
+      echo "Partial file exists. Deleting $sanitized_filename."
+      rm "$sanitized_filename"
+    fi
   fi
 done 3< "$temp_file_list"
 
