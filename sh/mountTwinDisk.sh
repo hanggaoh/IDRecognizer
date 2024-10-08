@@ -1,55 +1,96 @@
 #!/bin/bash
 
-# Check if two arguments are provided
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <disk_identifier> <mount_point>"
+# Ensure the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root"
     exit 1
 fi
 
-# Arguments
-disk_identifier=$1
-mount_point=$2
-
-# Detect filesystem type using blkid
-fs_type=$(blkid -o value -s TYPE /dev/$disk_identifier)
-
-# Check if blkid was able to find the filesystem type
-if [ -z "$fs_type" ]; then
-    echo "Could not detect filesystem type for /dev/$disk_identifier."
-    exit 1
+# Install mergerfs if it is not installed
+if ! command -v mergerfs &> /dev/null; then
+    echo "mergerfs not found. Installing mergerfs..."
+    apt-get update && apt-get install -y mergerfs
+    if [ $? -ne 0 ]; then
+        echo "Failed to install mergerfs"
+        exit 1
+    fi
 fi
 
-echo "Detected filesystem type: $fs_type"
+# Unmount previous mounts to ensure a clean state
+umount -l /media/pi/sdb1 2>/dev/null
+umount -l /media/pi/sdc1 2>/dev/null
+umount -l /home/pi/smbshare 2>/dev/null
 
-# Check if disk identifier and mount point exist in fstab
-if grep -q "$disk_identifier" /etc/fstab; then
-    echo "Disk identifier $disk_identifier is already in /etc/fstab."
-    exit 0
-fi
+# Iterate over all provided arguments and mount each one
+mount_points=()
+for device in "$@"; do
+    mount_point="/media/pi/$device"
 
-# Add the mount point if it doesn't exist
-if ! grep -q "$mount_point" /etc/fstab; then
-    echo "Adding $disk_identifier to /etc/fstab with filesystem type $fs_type..."
+    mkdir -p "$mount_point"
 
-    # Create the entry in /etc/fstab based on detected filesystem type
-    echo "/dev/$disk_identifier  $mount_point  $fs_type  defaults  0  0" | sudo tee -a /etc/fstab > /dev/null
+    # Mount using appropriate method (ntfs-3g for NTFS)
+    mount_command="mount"
+    fs_type=$(lsblk -no FSTYPE "/dev/$device")
 
-    echo "Entry added to /etc/fstab:"
-    echo "/dev/$disk_identifier  $mount_point  $fs_type  defaults  0  0"
-
-    # Optionally, create the mount point directory if it doesn't exist
-    if [ ! -d "$mount_point" ]; then
-        sudo mkdir -p "$mount_point"
-        echo "Mount point directory $mount_point created."
+    if [ "$fs_type" == "ntfs" ]; then
+        mount_command="ntfs-3g"
     fi
 
-    # Reload systemd to recognize changes to fstab
-    sudo systemctl daemon-reload
+    $mount_command "/dev/$device" "$mount_point"
 
-    # Mount the drive
-    sudo mount -a
+    if [ $? -eq 0 ]; then
+        echo "$device mounted successfully to $mount_point"
+    else
+        echo "Failed to mount $device"
+        continue
+    fi
 
-    echo "Disk $disk_identifier mounted at $mount_point."
+    # Get UUID of the device
+    uuid=$(blkid -s UUID -o value "/dev/$device")
+
+    # Add entry to /etc/fstab if it doesn't already exist
+    if ! grep -qs "$uuid" /etc/fstab; then
+        echo "UUID=$uuid $mount_point $fs_type defaults,auto,users,rw,nofail 0 2" >> /etc/fstab
+        echo "Added $device to /etc/fstab"
+    else
+        echo "$device is already present in /etc/fstab"
+    fi
+
+    mount_points+=("$mount_point")
+done
+
+# Wait to ensure all drives are mounted properly
+sleep 2
+
+# Combine mount points using mergerfs
+if [ ${#mount_points[@]} -ge 2 ]; then
+    combined_mount_point="/home/pi/smbshare"
+    mkdir -p "$combined_mount_point"
+
+    merged_paths=$(IFS=:; echo "${mount_points[*]}")
+
+    # Confirm that all drives are mounted
+    if mount | grep -qs "/media/pi/sdb1" && mount | grep -qs "/media/pi/sdc1"; then
+        echo "Both drives are mounted, proceeding with mergerfs..."
+
+        mergerfs "$merged_paths" "$combined_mount_point" -o defaults,allow_other,category.create=mfs,nonempty
+        if [ $? -eq 0 ]; then
+            echo "Mergerfs mounted successfully to $combined_mount_point"
+
+            # Add mergerfs entry to /etc/fstab if it doesn't already exist
+            if ! grep -qs "mergerfs#$merged_paths" /etc/fstab; then
+                echo "mergerfs#$merged_paths $combined_mount_point fuse.mergerfs defaults,allow_other,category.create=mfs,nonempty 0 0" >> /etc/fstab
+                echo "Added mergerfs entry to /etc/fstab"
+            else
+                echo "Mergerfs entry is already present in /etc/fstab"
+            fi
+        else
+            echo "Failed to mount mergerfs"
+        fi
+    else
+        echo "One or both drives are not mounted properly. Exiting..."
+        exit 1
+    fi
 else
-    echo "Mount point $mount_point is already in /etc/fstab."
+    echo "Not enough mount points for mergerfs. At least two are required."
 fi
