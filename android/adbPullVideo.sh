@@ -58,10 +58,11 @@ while IFS= read -r video_file <&3; do
   sanitized_filename=$(echo "$corrected_path" | sed 's/[][()|&;!]/_/g')
   echo "Pulling $video_file to $sanitized_filename"
   adb pull "$video_file" "$sanitized_filename"
+
   # Check if the adb pull command was successful
   if [ $? -eq 0 ]; then
     echo "Successfully pulled $video_file. Deleting from device."
-    adb shell rm "'$video_file'"
+    adb shell rm "\"$video_file\""  # Simplified, no additional quoting or escaping
   else
     echo "Failed to pull $video_file. Skipping deletion."
     if [ -f "$sanitized_filename" ]; then
@@ -70,4 +71,3 @@ while IFS= read -r video_file <&3; do
     fi
   fi
 done 3< "$temp_file_list"
-
