@@ -47,3 +47,9 @@ if ! grep -qF "$FSTAB_ENTRY" /etc/fstab; then
 else
     echo "Entry already exists in /etc/fstab."
 fi
+
+# Final check to ensure the device is mounted
+if ! mountpoint -q "$MOUNT_POINT"; then
+    echo "Error: $DEVICE is not mounted at $MOUNT_POINT."
+    exit 1
+fi
