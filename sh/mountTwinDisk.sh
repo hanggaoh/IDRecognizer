@@ -17,8 +17,8 @@ if ! command -v mergerfs &> /dev/null; then
 fi
 
 # Unmount previous mounts to ensure a clean state
-umount -l /media/pi/sdb1 2>/dev/null
-umount -l /media/pi/sdc1 2>/dev/null
+umount -l /dev/sdb1 2>/dev/null
+umount -l /dev/sdc1 2>/dev/null
 umount -l /home/pi/smbshare 2>/dev/null
 
 # Iterate over all provided arguments and mount each one
