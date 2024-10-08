@@ -49,7 +49,7 @@ for device in "$@"; do
     uuid=$(blkid -s UUID -o value "/dev/$device")
 
     # Add entry to /etc/fstab if it doesn't already exist
-    if ! grep -qs "$uuid" /etc/fstab; then
+    if ! grep -qs "UUID=$uuid" /etc/fstab; then
         echo "UUID=$uuid $mount_point $fs_type defaults,auto,users,rw,nofail 0 2" >> /etc/fstab
         echo "Added $device to /etc/fstab"
     else
