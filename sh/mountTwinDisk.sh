@@ -164,7 +164,13 @@ create_cron_job() {
     local secondary_drive="$2"
 
     local script_path="$(realpath "$0")"
-    local cron_job="0 2 * * * /bin/bash -c 'find /home/pi/smbshare -type f -atime -7 -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && find /home/pi/smbshare -type f -atime +30 -exec mv -n {} /media/pi/$secondary_drive \;'"
+    local parent_folder="$(dirname "$script_path")"
+    local log_folder="$parent_folder/../logs"
+    local log_file="$log_folder/cronjob.log"
+    # Ensure the logs directory exists
+    mkdir -p "$log_folder"
+
+    local cron_job="0 2 * * * /bin/bash -c 'find /home/pi/smbshare -type f -atime -7 -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && find /home/pi/smbshare -type f -atime +30 -exec mv -n {} /media/pi/$secondary_drive \;' >> $log_file 2>&1"
 
     # Remove any existing cron job that includes 'find /home/pi/smbshare'
     crontab -l | grep -v -F "find /home/pi/smbshare" | crontab -
