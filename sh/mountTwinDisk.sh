@@ -22,14 +22,50 @@ install_mergerfs() {
 
 # Unmount any existing mounts
 clean_previous_mounts() {
+    # Loop through the provided devices
     for device in "$@"; do
-        umount -l "/dev/$device" 2>/dev/null
-        umount -l "/media/pi/$device" 2>/dev/null
+        if mount | grep -q "/dev/$device"; then
+            echo "Attempting to unmount /dev/$device..."
+            umount -f "/dev/$device" 2>/dev/null
+            if [ $? -eq 0 ]; then
+                echo "/dev/$device unmounted successfully."
+            else
+                echo "Warning: Failed to unmount /dev/$device. It may be busy."
+            fi
+        fi
+        if mount | grep -q "/media/pi/$device"; then
+            echo "Attempting to unmount /media/pi/$device..."
+            umount -f "/media/pi/$device" 2>/dev/null
+            if [ $? -eq 0 ]; then
+                echo "/media/pi/$device unmounted successfully."
+            else
+                echo "Warning: Failed to unmount /media/pi/$device. It may be busy."
+            fi
+        fi
     done
-    umount -l /home/pi/smbshare 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to clean previous mounts"
+    
+    # Check if smbshare is mounted
+    if mount | grep -q "/home/pi/smbshare"; then
+        echo "Attempting to unmount /home/pi/smbshare..."
+        umount -f /home/pi/smbshare 2>/dev/null
+        
+        # Check for errors during unmount
+        if [ $? -eq 0 ]; then
+            echo "/home/pi/smbshare unmounted successfully."
+        else
+            echo "Warning: Failed to unmount /home/pi/smbshare. It may be busy."
+        fi
+    fi
+
+    # Final check for remaining mounts specific to devices
+    remaining_mounts=$(mount | grep -E "/dev/(${*// /|})|/media/pi/(${*// /|})|/home/pi/smbshare")
+    if [ -n "$remaining_mounts" ]; then
+        echo "Error: Some mounts could not be cleaned."
+        echo "Remaining mounts:"
+        echo "$remaining_mounts"
         exit 1
+    else
+        echo "All specified mounts have been cleaned successfully."
     fi
 }
 
@@ -123,22 +159,18 @@ manage_files() {
     find "$combined_mount" -type f -atime +30 -exec mv -n {} "$secondary_mount" \;
 }
 
-# Create a cron job to call manage_files function daily
 create_cron_job() {
-    local preferred_drive="$1"  # Get the first argument
-    local secondary_drive="$2"  # Get the second argument
+    local preferred_drive="$1"
+    local secondary_drive="$2"
 
-    # Get the path to this script
     local script_path="$(realpath "$0")"
+    local cron_job="0 2 * * * /bin/bash -c 'find /home/pi/smbshare -type f -atime -7 -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && find /home/pi/smbshare -type f -atime +30 -exec mv -n {} /media/pi/$secondary_drive \;'"
 
-    # Remove the existing cron job if it exists
-    crontab -l | grep -v "$script_path" | crontab -
+    # Remove any existing cron job that includes 'find /home/pi/smbshare'
+    crontab -l | grep -v -F "find /home/pi/smbshare" | crontab -
 
-    # Add a cron job to run the manage_files function daily at 2 AM
-    cron_job="0 2 * * * /bin/bash -c 'source $script_path && manage_files $preferred_drive $secondary_drive'"
-    
     # Check if the cron job already exists and add a new one if not
-    if ! crontab -l | grep -q "$script_path"; then
+    if ! crontab -l | grep -q -F "$cron_job"; then
         (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
         echo "Cron job created to manage file frequency"
     else
