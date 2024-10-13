@@ -208,5 +208,4 @@ main() {
     fi
 }
 
-# Run the main function with all passed arguments (e.g., sdb1 sdc1)
-main "$@"
+# Run the main function with all passed arguments (e.g., sdb

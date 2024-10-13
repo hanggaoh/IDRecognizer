@@ -4,7 +4,7 @@
 # Change this to the actual directory
 # Run the Python script with the first destination
 cd /home/pi/IDRecognizer
-python3 ./mvVideo.py /media/pi/ssd /media/pi/sdb1/
+python3 ./mvVideo.py /home/pi/smbshare
 
 # Check if the script was successful
 if [ $? -ne 0 ]; then
