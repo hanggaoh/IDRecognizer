@@ -51,6 +51,16 @@ sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak
 # Configure smb.conf to add shared directories
 echo "Configuring Samba shares..."
 sudo bash -c 'cat >> /etc/samba/smb.conf << EOF
+[global]
+   unix extensions = no
+   max protocol = SMB2
+   dos charset = UTF-8
+   unix charset = UTF-8
+   display charset = UTF-8
+   mangled names = yes
+   mangling method = hash
+   name resolve order = bcast host
+   max stat cache size = 64
 
 [ssd]
    path = /media/pi/ssd
