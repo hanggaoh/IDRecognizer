@@ -43,29 +43,16 @@ clean_previous_mounts() {
             fi
         fi
     done
-    
+
     # Check if smbshare is mounted
     if mount | grep -q "/home/pi/smbshare"; then
         echo "Attempting to unmount /home/pi/smbshare..."
         umount -f /home/pi/smbshare 2>/dev/null
-        
-        # Check for errors during unmount
         if [ $? -eq 0 ]; then
             echo "/home/pi/smbshare unmounted successfully."
         else
             echo "Warning: Failed to unmount /home/pi/smbshare. It may be busy."
         fi
-    fi
-
-    # Final check for remaining mounts specific to devices
-    remaining_mounts=$(mount | grep -E "/dev/(${*// /|})|/media/pi/(${*// /|})|/home/pi/smbshare")
-    if [ -n "$remaining_mounts" ]; then
-        echo "Error: Some mounts could not be cleaned."
-        echo "Remaining mounts:"
-        echo "$remaining_mounts"
-        exit 1
-    else
-        echo "All specified mounts have been cleaned successfully."
     fi
 }
 
@@ -73,20 +60,19 @@ clean_previous_mounts() {
 mount_device() {
     local device="$1"
     local mount_point="/media/pi/$device"
-    
+
     mkdir -p "$mount_point"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to create mount point for $device"
         exit 1
     fi
-    
-    # Check filesystem type and select appropriate mount command
+
     local fs_type=$(lsblk -no FSTYPE "/dev/$device")
     local mount_command="mount"
     if [ "$fs_type" == "ntfs" ]; then
         mount_command="ntfs-3g"
     fi
-    
+
     $mount_command "/dev/$device" "$mount_point"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to mount $device"
@@ -105,63 +91,82 @@ mount_device() {
     else
         echo "$device is already present in /etc/fstab"
     fi
-    
+
     echo "$device mounted successfully to $mount_point"
     mount_points+=("$mount_point")
 }
 
-# Combine mount points using mergerfs with the preferred drive logic
+# Combine mount points using mergerfs
 combine_mount_points() {
     local preferred_mount="${mount_points[0]}"
     local secondary_mount="${mount_points[1]}"
     local combined_mount_point="/home/pi/smbshare"
-    
+
     mkdir -p "$combined_mount_point"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to create combined mount point"
         exit 1
     fi
 
-    # Use preferred drive for most frequently used files, secondary drive for less frequent
     mergerfs "$preferred_mount:$secondary_mount" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
     if [ $? -ne 0 ]; then
         echo "Error: Failed to mount mergerfs"
         exit 1
     fi
 
-    # Add mergerfs entry to fstab using the UUID of the preferred and secondary disks
-    local preferred_uuid=$(blkid -s UUID -o value "/dev/$(basename "$preferred_mount")")
-    local secondary_uuid=$(blkid -s UUID -o value "/dev/$(basename "$secondary_mount")")
-    if ! grep -qs "mergerfs#$preferred_uuid:$secondary_uuid" /etc/fstab; then
-        echo "mergerfs#UUID=$preferred_uuid:UUID=$secondary_uuid $combined_mount_point fuse.mergerfs defaults,allow_other,category.create=ff,moveonenospc=true,nonempty 0 0" >> /etc/fstab
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to add mergerfs entry to /etc/fstab"
-            exit 1
-        fi
-        echo "Added mergerfs entry to /etc/fstab using UUID"
-    else
-        echo "Mergerfs entry is already present in /etc/fstab"
-    fi
+    # Add the mergerfs entry to a systemd mount unit file
+    create_systemd_unit "$preferred_mount" "$secondary_mount" "$combined_mount_point"
 
     echo "Mergerfs mounted successfully with preferred drive at $preferred_mount"
 }
 
+# Create systemd unit for mergerfs mount
+create_systemd_unit() {
+    local preferred_mount="$1"
+    local secondary_mount="$2"
+    local combined_mount_point="$3"
 
-# Main function to orchestrate mounting and cron job setup
+    local preferred_uuid=$(blkid -s UUID -o value "/dev/$(basename "$preferred_mount")")
+    local secondary_uuid=$(blkid -s UUID -o value "/dev/$(basename "$secondary_mount")")
+
+    # Write the systemd mount unit file
+    cat <<EOF > /etc/systemd/system/home-pi-smbshare.mount
+[Unit]
+Description=MergerFS Mount for /home/pi/smbshare
+Requires=network-online.target
+After=network-online.target
+
+[Mount]
+What=mergerfs#UUID=$preferred_uuid:UUID=$secondary_uuid
+Where=$combined_mount_point
+Type=fuse.mergerfs
+Options=defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    # Reload systemd daemon and enable the mount
+    systemctl daemon-reload
+    systemctl enable home-pi-smbshare.mount
+    systemctl start home-pi-smbshare.mount
+
+    echo "Systemd unit for mergerfs mount created and enabled."
+}
+
+# Main function
 main() {
     check_root
     install_mergerfs
-    
-    # Clean previous mounts
     clean_previous_mounts "$@"
-    
+
     mount_points=()
     for device in "$@"; do
         mount_device "$device"
     done
-    
+
     sleep 2  # Wait to ensure mounts are stable
-    
+
     if [ ${#mount_points[@]} -ge 2 ]; then
         combine_mount_points
     else
@@ -170,5 +175,5 @@ main() {
     fi
 }
 
-# Run the main function with all passed arguments (e.g., sdb
+# Run the main function with all passed arguments (e.g., sdb sdc)
 main "$@"
