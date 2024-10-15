@@ -12,6 +12,14 @@ check_adb_installed() {
 
 # Check if adb is installed
 check_adb_installed
+
+script_path="$(realpath "$0")"
+parent_folder="$(dirname "$script_path")"
+log_folder="$parent_folder/../logs"
+
+# Ensure the logs directory exists
+mkdir -p "$log_folder"
+
 # Create the service file
 SERVICE_FILE="/etc/systemd/system/adbListen.service"
 
