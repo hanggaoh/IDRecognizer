@@ -146,43 +146,6 @@ combine_mount_points() {
     echo "Mergerfs mounted successfully with preferred drive at $preferred_mount"
 }
 
-# Function to manage files based on access time using arguments for identifiers
-manage_files() {
-    local preferred_mount="/media/pi/$1"  # First argument as the preferred drive
-    local secondary_mount="/media/pi/$2"  # Second argument as the secondary drive
-    local combined_mount="/home/pi/smbshare"
-
-    # Move frequently used files (accessed within last 7 days) to preferred drive
-    find "$combined_mount" -type f -atime -7 -exec cp -u --preserve=all {} "$preferred_mount" \;
-
-    # Move infrequently used files (not accessed in 30+ days) to secondary drive
-    find "$combined_mount" -type f -atime +30 -exec mv -n {} "$secondary_mount" \;
-}
-
-create_cron_job() {
-    local preferred_drive="$1"
-    local secondary_drive="$2"
-
-    local script_path="$(realpath "$0")"
-    local parent_folder="$(dirname "$script_path")"
-    local log_folder="$parent_folder/../logs"
-    local log_file="$log_folder/cronjob.log"
-    # Ensure the logs directory exists
-    mkdir -p "$log_folder"
-
-    local cron_job="0 2 * * * /bin/bash -c 'find /home/pi/smbshare -type f -atime -7 -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && find /home/pi/smbshare -type f -atime +30 -exec mv -n {} /media/pi/$secondary_drive \;' >> $log_file 2>&1"
-
-    # Remove any existing cron job that includes 'find /home/pi/smbshare'
-    crontab -l | grep -v -F "find /home/pi/smbshare" | crontab -
-
-    # Check if the cron job already exists and add a new one if not
-    if ! crontab -l | grep -q -F "$cron_job"; then
-        (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
-        echo "Cron job created to manage file frequency"
-    else
-        echo "Cron job already exists"
-    fi
-}
 
 # Main function to orchestrate mounting and cron job setup
 main() {
@@ -201,7 +164,6 @@ main() {
     
     if [ ${#mount_points[@]} -ge 2 ]; then
         combine_mount_points
-        create_cron_job "$1" "$2"  # Pass preferred and secondary drive identifiers to cron job
     else
         echo "Error: Not enough mount points for mergerfs. At least two are required."
         exit 1
@@ -209,3 +171,4 @@ main() {
 }
 
 # Run the main function with all passed arguments (e.g., sdb
+main "$@"
