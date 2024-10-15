@@ -46,7 +46,7 @@ create_cron_job() {
     mkdir -p "$log_folder"
 
     # Define the cron job
-    local cron_job="0 2 * * * /bin/bash -c 'find /home/pi/smbshare -type f -atime -3 -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && find /home/pi/smbshare -type f \( -atime +7 -o ! -atime -7 \) -exec mv -n {} /media/pi/$secondary_drive \;' >> $log_file 2>&1"
+    local cron_job="0 2 * * * /bin/bash -c 'sudo find /home/pi/smbshare -type f -atime -3 -print -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && sudo find /home/pi/smbshare -type f \( -atime +3 -o ! -atime -7 \) -print -exec mv -n {} /media/pi/$secondary_drive \;' >> $log_file 2>&1"
 
     # Add the cron job if it doesn't already exist
     add_cron_job_if_not_exists "$cron_job" "$log_file"
