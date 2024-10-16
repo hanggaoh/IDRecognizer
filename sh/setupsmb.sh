@@ -53,7 +53,16 @@ echo "Configuring Samba shares..."
 sudo bash -c 'cat >> /etc/samba/smb.conf << EOF
 [global]
    unix extensions = no
-   max protocol = SMB2
+   max protocol = SMB3
+   min protocol = SMB2
+   vfs objects = fruit streams_xattr  
+   fruit:metadata = stream
+   fruit:model = MacSamba
+   fruit:veto_appledouble = no
+   fruit:nfs_aces = no
+   fruit:wipe_intentionally_left_blank_rfork = yes 
+   fruit:delete_empty_adfiles = yes 
+   fruit:posix_rename = yes 
    dos charset = UTF-8
    unix charset = UTF-8
    display charset = UTF-8
