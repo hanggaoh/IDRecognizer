@@ -126,18 +126,17 @@ create_systemd_unit() {
     local secondary_mount="$2"
     local combined_mount_point="$3"
 
-    local preferred_uuid=$(blkid -s UUID -o value "/dev/$(basename "$preferred_mount")")
-    local secondary_uuid=$(blkid -s UUID -o value "/dev/$(basename "$secondary_mount")")
+    # Create the combined mount point directory if it doesn't exist
+    mkdir -p "$combined_mount_point"
 
     # Write the systemd mount unit file
     cat <<EOF > /etc/systemd/system/home-pi-smbshare.mount
 [Unit]
-Description=MergerFS Mount for /home/pi/smbshare
+Description=MergerFS Mount for $combined_mount_point
 Requires=network-online.target
 After=network-online.target
-
 [Mount]
-What=mergerfs#UUID=$preferred_uuid:UUID=$secondary_uuid
+What=$preferred_mount:$secondary_mount
 Where=$combined_mount_point
 Type=fuse.mergerfs
 Options=defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
