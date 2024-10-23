@@ -2,7 +2,7 @@ video_extensions = {
     '.mp4', '.avi', '.mkv', '.mov', '.flv', '.wmv', '.m4v', '.mpg', '.mpeg', 
     '.3gp', '.webm', '.ogv', '.vob', '.rm', '.rmvb', '.m2ts', '.mts', '.ts', 
     '.mxf', '.divx', '.f4v', '.asf', '.amv', '.svi', '.3g2', '.m2v', '.mpe',
-    '.mpv', '.m1v', '.m4p', '.m4b', ".iso"
+    '.mpv', '.m1v', '.m4p', '.m4b', ".iso", '.nrg'
 }
 
 patterns = {
