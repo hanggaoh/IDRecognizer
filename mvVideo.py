@@ -25,7 +25,7 @@ def find_videos(directory):
                 yield (root, file)
 
 
-def copy_file_with_logging(original_path, destination_dir, logger):
+def copy_file_with_logging(original_path, destination_dir, destination_name, logger):
     """Copy a file to the destination directory with logging of the copy speed."""
     try:
         # Get disk usage
@@ -39,8 +39,6 @@ def copy_file_with_logging(original_path, destination_dir, logger):
         # Start the timer
         start_time = time.time()
         
-        # Prepare destination path
-        destination_name = os.path.basename(original_path)
         destination_path = os.path.join(destination_dir, destination_name)
 
         # Copy the file with metadata preservation
@@ -74,10 +72,9 @@ def moveVideos(video_files, destination_dir):
         logger.debug(f"Destin file: {os.path.join(destination_dir, destination_name_remove_duplicate)}")
 
         original_path = os.path.join(original_dir, file_name)
-        destination_path = os.path.join(destination_dir, destination_name_remove_duplicate)
         
         # Call the copy function
-        copy_file_with_logging(original_path, destination_dir, logger)
+        copy_file_with_logging(original_path, destination_dir, destination_name, logger)
         
         # Remove the original file after successful copy
         os.remove(original_path)
