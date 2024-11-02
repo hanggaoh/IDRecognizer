@@ -52,7 +52,7 @@ def copy_file_with_logging(original_path, destination_dir, destination_name, log
         speed = file_size / (duration * 1024 * 1024) if duration > 0 else 0
 
         # Log the copy speed
-        logger.info(f"Copied {original_path} to {destination_dir} at {speed:.2f} MB/s in {duration:.2f} seconds.")
+        logger.info(f"Copied {original_path} to {destination_path} at {speed:.2f} MB/s in {duration:.2f} seconds.")
 
     except (KeyboardInterrupt, Exception) as e:
         if os.path.exists(destination_path):
