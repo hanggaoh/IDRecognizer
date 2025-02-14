@@ -15,6 +15,12 @@ class TestMatchAndFormat(unittest.TestCase):
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result, ["Heyzo-3449"])
 
+    def test_name_formatting(self):
+        text = "423777_3xplanet_Heyzo_3449.mp4"
+        patterns = {r'(?i)(heyzo).*(\d{4})': r'\1-\2'}
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result, ["Heyzo-3449"])
+        
     def test_name_milti_CD_formatting(self):
         # Test cases
         test_cases = {
