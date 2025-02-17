@@ -1,5 +1,6 @@
 import unittest
 from matcher import matcher
+from utils.constants import patterns
 class TestMatchAndFormat(unittest.TestCase):
     def setUp(self):
         # Define the pattern dictionary as in your original code
@@ -9,11 +10,22 @@ class TestMatchAndFormat(unittest.TestCase):
             r"([a-z]{2,5})-(\d{2,3})([A-E])": lambda m: f"{m.group(1).capitalize()}-{m.group(2).zfill(3)}_{m.group(3)}"
         }
     
-    def test_name_formatting(self):
+    def test_name_formatting_general(self):
         text = "423777_3xplanet_Heyzo_3449.mp4"
         patterns = {r'([a-zA-Z]{2,5})[-_](\d{2,4})': r'\1-\2'}
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result, ["Heyzo-3449"])
+
+    def test_name_formatting_specific(self):
+        text = "423777_3xplanet_Heyzo_3449.mp4"
+        patterns = {r'(?i)(heyzo).*(\d{4})': r'\1-\2'}
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result, ["Heyzo-3449"])
+    
+    def test_name_formatting_all(self):
+        text = "423777_3xplanet_Heyzo_3449.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "Heyzo-3449")
 
     def test_name_milti_CD_formatting(self):
         # Test cases
