@@ -42,7 +42,27 @@ clean_previous_mounts() {
                 echo "Warning: Failed to unmount /media/pi/$device. It may be busy."
             fi
         fi
-    done
+        # Check if the device is in /etc/fstab and remove the line if it exists
+        if grep -q "/media/pi/$device" /etc/fstab; then
+            echo "Removing /media/pi/$device from /etc/fstab..."
+            sed -i "\|/media/pi/$device|d" /etc/fstab
+            if [ $? -eq 0 ]; then
+            echo "/media/pi/$device removed from /etc/fstab successfully."
+            else
+            echo "Warning: Failed to remove /media/pi/$device from /etc/fstab."
+            fi
+        fi
+
+        if grep -q "$(blkid -s UUID -o value /dev/$device)" /etc/fstab; then
+            echo "Removing UUID for /dev/$device from /etc/fstab..."
+            sed -i "\|$(blkid -s UUID -o value /dev/$device)|d" /etc/fstab
+            if [ $? -eq 0 ]; then
+            echo "UUID for /dev/$device removed from /etc/fstab successfully."
+            else
+            echo "Warning: Failed to remove UUID for /dev/$device from /etc/fstab."
+            fi
+        fi
+        done
 
     # Check if smbshare is mounted
     if mount | grep -q "/home/pi/smbshare"; then
