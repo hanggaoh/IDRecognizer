@@ -74,7 +74,7 @@ def moveVideos(video_files, destination_dir):
         original_path = os.path.join(original_dir, file_name)
         
         # Call the copy function
-        copy_file_with_logging(original_path, destination_dir, destination_name, logger)
+        copy_file_with_logging(original_path, destination_dir, destination_name_remove_duplicate, logger)
         
         # Remove the original file after successful copy
         os.remove(original_path)
