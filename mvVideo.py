@@ -83,7 +83,16 @@ def moveVideos(video_files, destination_dir):
 def findMoveVideos(source_folder, destination_folder):
     video_files = find_videos(source_folder)
     moveVideos(video_files, destination_folder)
-    
+
+
+def check_disk_usage(directory, threshold):
+    """Check if the disk usage of the given directory is above the threshold percentage."""
+    total, used, free = shutil.disk_usage(directory)
+    used_percentage = (used / total) * 100
+    logger.info(f"Disk usage of {directory}: {used_percentage:.2f}%")
+    return used_percentage >= threshold
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: script.py <source_folder> <destination_folder>")
@@ -91,6 +100,9 @@ if __name__ == "__main__":
     
     source_folder = sys.argv[1]
     destination_folder = sys.argv[2]
-    
-    findMoveVideos(source_folder, destination_folder)
-
+    threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 90.0  # Default threshold is 90%
+       
+    if check_disk_usage(source_folder, threshold):
+        findMoveVideos(source_folder, destination_folder)
+    else:
+        logger.info(f"Disk usage of {source_folder} is below the threshold of {threshold}%. Skipping operation.")
