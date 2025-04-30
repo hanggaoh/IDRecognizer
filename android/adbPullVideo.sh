@@ -26,7 +26,7 @@ mkdir -p "$destination_folder_on_host"
 
 # Capture the file list using adb shell and store it in a temporary file
 adb shell <<EOF > "$temp_file_list"
-find "$parent_folder" -type f \( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.webm" -o -iname "*.mpg" -o -iname "*.mpeg" -o -iname "*.m4v" -o -iname "*.3gp" -o -iname "*.3g2" -o -iname "*.vob" -o -iname "*.ogv" -o -iname "*.iso" \) | while read video_file; do
+find "$parent_folder" -type f \( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.webm" -o -iname "*.mpg" -o -iname "*.mpeg" -o -iname "*.m4v" -o -iname "*.3gp" -o -iname "*.3g2" -o -iname "*.vob" -o -iname "*.ogv" -o -iname "*.iso"  -o -iname "*.ts" \) | while read video_file; do
   dir=\$(dirname "\$video_file")
   base_video_file=\$(basename "\$video_file")
 
