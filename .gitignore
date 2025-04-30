@@ -3,3 +3,4 @@ data/*
 *.pyc
 .DS_Store
 videos.txt
+torrents.txt
