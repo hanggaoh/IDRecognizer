@@ -6,6 +6,7 @@ video_extensions = {
 }
 
 patterns = {
+    r"^([a-zA-Z0-9]+)\.(\d{2}\.\d{2}\.\d{2})(\..*)$": lambda m: f"{m.group(2)}.{m.group(1)}{m.group(3)}",
     r'(?i)(heyzo).*(\d{4})': r'\1-\2',
     r'(?i)(fc2).*(ppv).*(\d{7}|\b\d{6}\b)': r'\1-\2-\3',
     r'(?i)(\d{6})[-_](\d{3}).*(carib|1pon)': r'\3-\1-\2',

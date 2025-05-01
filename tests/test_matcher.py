@@ -5,6 +5,7 @@ class TestMatchAndFormat(unittest.TestCase):
     def setUp(self):
         # Define the pattern dictionary as in your original code
         self.pattern_dict = {
+            r"^([a-zA-Z0-9]+)\.(\d{2}\.\d{2}\.\d{2})(\..*)$": lambda m: f"{m.group(2)}.{m.group(1)}{m.group(3)}",
             r"([a-z]{2,5})-(\d{2,3})_(\d{1,2})": lambda m: f"{m.group(1).capitalize()}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",
             r"([a-z]{2,5})-(\d{2,3})[-_]?cd([\d]{1,2})": lambda m: f"{m.group(1).capitalize()}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",
             r"([a-z]{2,5})-(\d{2,3})([A-E])": lambda m: f"{m.group(1).capitalize()}-{m.group(2).zfill(3)}_{m.group(3)}"
@@ -26,6 +27,11 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "423777_3xplanet_Heyzo_3449.mp4"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "Heyzo-3449")
+
+    def test_name_formatting_with_white(self):
+        text = "legalporno.16.04.23.arwen.gold.and.crystal.greenvelle.gio151.mp4"
+        results = matcher.match_and_format(text, self.pattern_dict)
+        self.assertEqual(results[0], "16.04.23.legalporno.arwen.gold.and.crystal.greenvelle.gio151.mp4")
 
     def test_name_milti_CD_formatting(self):
         # Test cases
