@@ -62,7 +62,7 @@ while IFS= read -r video_file <&3; do
   # Check if the adb pull command was successful
   if [ $? -eq 0 ]; then
     echo "Successfully pulled $video_file. Deleting from device."
-    adb shell rm "\"$video_file\""  # Simplified, no additional quoting or escaping
+    adb shell rm "$video_file"
   else
     echo "Failed to pull $video_file. Skipping deletion."
     if [ -f "$sanitized_filename" ]; then
