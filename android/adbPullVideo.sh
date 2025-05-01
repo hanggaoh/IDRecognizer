@@ -2,13 +2,15 @@
 
 # Define the paths
 parent_folder="/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload"
+
 destination_folder_on_host="/media/pi/ssd"
 temp_file_list="videos.txt"
 sanitize_script="./formatFile.py"
 format_flag=false
 
-while getopts "d:f" opt; do
+while getopts "p:d:f" opt; do
   case ${opt} in
+    p ) parent_folder="$OPTARG" ;;
     d ) destination_folder_on_host="$OPTARG" ;;
     f ) format_flag=true ;;
     * ) 
