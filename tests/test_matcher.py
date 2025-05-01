@@ -30,7 +30,7 @@ class TestMatchAndFormat(unittest.TestCase):
 
     def test_name_formatting_with_white(self):
         text = "legalporno.16.04.23.arwen.gold.and.crystal.greenvelle.gio151.mp4"
-        results = matcher.match_and_format(text, self.pattern_dict)
+        results = matcher.match_and_format(text, patterns)
         self.assertEqual(results[0], "16.04.23.legalporno.arwen.gold.and.crystal.greenvelle.gio151.mp4")
 
     def test_name_milti_CD_formatting(self):
