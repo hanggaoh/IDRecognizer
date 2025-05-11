@@ -14,17 +14,22 @@ while getopts "p:d:f" opt; do
     d ) destination_folder_on_host="$OPTARG" ;;
     f ) format_flag=true ;;
     * ) 
-      echo "Usage: $0 [-d destination_folder]"
+      echo "$(timestamp) Usage: $0 [-d destination_folder]"
       exit 1;; 
-  esac
-done
-shift $((OPTIND - 1))
+    esac
+  done
+  shift $((OPTIND - 1))
 
-echo "Destination folder set to: $destination_folder_on_host"
-mkdir -p "$destination_folder_on_host"
+  # Function to get the current timestamp
+  timestamp() {
+    date '+%Y-%m-%d %H:%M:%S'
+  }
 
-# Clean up any existing temp file
-> "$temp_file_list"
+  echo "$(timestamp) Destination folder set to: $destination_folder_on_host"
+  mkdir -p "$destination_folder_on_host"
+
+  # Clean up any existing temp file
+  > "$temp_file_list"
 
 # Capture the file list using adb shell and store it in a temporary file
 adb shell <<EOF > "$temp_file_list"
@@ -47,29 +52,38 @@ find "$parent_folder" -type f \( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m
 done
 EOF
 
-# Now read the file paths and pull each file to the host machine
-while IFS= read -r video_file <&3; do
-  base_filename=$(basename "$video_file")
+  # Now read the file paths and pull each file to the host machine
+  while IFS= read -r video_file <&3; do
+    base_filename=$(basename "$video_file")
 
-  if [ "$format_flag" = true ]; then
+    if [ "$format_flag" = true ]; then
     corrected_path=$(python3 "$sanitize_script" "$destination_folder_on_host" "$base_filename")
-  else
+    else
     corrected_path="$destination_folder_on_host/$base_filename"
-  fi
+    fi
 
-  sanitized_filename=$(echo "$corrected_path" | sed 's/[][()|&;!]/_/g')
-  echo "Pulling $video_file to $sanitized_filename"
-  adb pull "$video_file" "$sanitized_filename"
+    sanitized_filename=$(echo "$corrected_path" | sed 's/[][()|&;!]/_/g')
+    echo "$(timestamp) Pulling $video_file to $sanitized_filename"
 
-  # Check if the adb pull command was successful
-  if [ $? -eq 0 ]; then
-    echo "Successfully pulled $video_file. Deleting from device."
-    adb shell rm "$video_file"
-  else
-    echo "Failed to pull $video_file. Skipping deletion."
+    # Use properly quoted paths for adb pull
+    adb shell "cat \"$video_file\"" | cat > "$sanitized_filename"
+
+    # Check if the adb pull command was successful
+    if [ $? -eq 0 ]; then
+    echo "$(timestamp) Successfully pulled $video_file. Deleting from device."
+
+    # Use properly quoted paths for adb rm
+    adb shell "rm \"$video_file\""
+    if adb shell "[ ! -f \"$video_file\" ]"; then
+      echo "$(timestamp) Successfully deleted $video_file from the device."
+    else
+      echo "$(timestamp) Failed to delete $video_file from the device."
+    fi
+    else
+    echo "$(timestamp) Failed to pull $video_file. Skipping deletion."
     if [ -f "$sanitized_filename" ]; then
-      echo "Partial file exists. Deleting $sanitized_filename."
+      echo "$(timestamp) Partial file exists. Deleting $sanitized_filename."
       rm "$sanitized_filename"
     fi
-  fi
-done 3< "$temp_file_list"
+    fi
+  done 3< "$temp_file_list"
