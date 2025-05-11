@@ -33,6 +33,11 @@ class TestMatchAndFormat(unittest.TestCase):
         results = matcher.match_and_format(text, patterns)
         self.assertEqual(results[0], "16.04.23.legalporno.arwen.gold.and.crystal.greenvelle.gio151.mp4")
 
+    def test_name_unconsore(self):
+        text = '無碼、無修正、UNCENSORED SKYHD-001 Sky Angel Blue Vol.1 宮澤ケイト, 桜井梨花  .mp4'
+        results = matcher.match_and_format(text, patterns)
+        self.assertEqual(results[0], 'SKYHD-001')
+
     def test_name_milti_CD_formatting(self):
         # Test cases
         test_cases = {
