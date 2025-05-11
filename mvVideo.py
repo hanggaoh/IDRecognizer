@@ -100,7 +100,7 @@ if __name__ == "__main__":
     
     source_folder = sys.argv[1]
     destination_folder = sys.argv[2]
-    threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 90.0  # Default threshold is 90%
+    threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 0
        
     if check_disk_usage(source_folder, threshold):
         findMoveVideos(source_folder, destination_folder)
