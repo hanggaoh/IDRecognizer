@@ -10,4 +10,3 @@ if __name__ == "__main__":
         for line in f:
             filename = line.rstrip().split("/")[-1]
             logger.debug(f"Original file: {filename}")
-            logger.debug(f"Formated: {formatName("~/Movies/.a", filename)}")
