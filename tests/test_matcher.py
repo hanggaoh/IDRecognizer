@@ -38,6 +38,11 @@ class TestMatchAndFormat(unittest.TestCase):
         results = matcher.match_and_format(text, patterns)
         self.assertEqual(results[0], 'SKYHD-001')
 
+    def test_name_unconsore_k(self):
+        text = '[thz.la]k1463_yuki_okamoto_bo.wmv'
+        results = matcher.match_and_format(text, patterns)
+        self.assertEqual(results[0], 'k1463')
+
     def test_name_milti_CD_formatting(self):
         # Test cases
         test_cases = {
