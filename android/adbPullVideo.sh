@@ -46,6 +46,7 @@ find "$parent_folder" -type f \( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m
   fi
 done
 EOF
+trap 'echo "Interrupted. Cleaning up $sanitized_filename"; [ -f "$sanitized_filename" ] && rm -f "$sanitized_filename"; exit 1' SIGINT
 
 # Now read the file paths and pull each file to the host machine
 while IFS= read -r video_file <&3; do
