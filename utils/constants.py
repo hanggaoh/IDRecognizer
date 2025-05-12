@@ -13,7 +13,7 @@ patterns = {
     r'(?i)(carib|1pon).*(\d{6})[-_](\d{3}).*': r'\1-\2-\3',
     r'(\d{6})[-_](\d{3})': r'\1-\2',
     r'([a-zA-Z]{4})[0]*(\d{3,4})': r'\1-\2',
-    r'([nN]\d{4})': r'\1',
+    r'([nNkK]\d{4})': r'\1',
     r"([a-z]{2,5})-(\d{2,3})_(\d{1,2})": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",
     r"([a-z]{2,5})-(\d{2,3})[-_]?cd([\d]{1,2})": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",
     r"([a-z]{2,5})-(\d{2,3})[-_]?([A-Ea-e])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
