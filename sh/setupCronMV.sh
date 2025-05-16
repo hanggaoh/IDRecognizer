@@ -29,9 +29,9 @@ fi
 # Check if the cron job already exists
 if ! grep -q "$currentPWD/sh/mvFileCron.sh" temp_cron; then
     # Add the cron job for pi
-    echo "0 */12 * * * $currentPWD/sh/mvFileCron.sh >> $logFile 2>&1" >> temp_cron
+    echo "0 0 * * * $currentPWD/sh/mvFileCron.sh >> $logFile 2>&1" >> temp_cron
     crontab -u pi temp_cron
-    echo "Cron job added for user pi: $currentPWD/sh/mvFileCron.sh every 12 hours"
+    echo "Cron job added for user pi: $currentPWD/sh/mvFileCron.sh every 24 hours"
 else
     echo "Cron job already exists for user pi."
 fi
