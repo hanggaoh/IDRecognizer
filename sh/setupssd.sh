@@ -1,10 +1,22 @@
 #!/bin/bash
 
+
+if [ -f .env ]; then
+    set -a
+    . .env
+    set +a
+fi
+
 # Default mount point
-DEFAULT_MOUNT_POINT="/media/pi/ssd"
+DEFAULT_MOUNT_POINT="$SSD_PATH"
 
 # Use command-line arguments for device; if not provided, use default sda1
-DEVICE=${1:-/dev/sda1}
+if [ -n "$1" ]; then
+    DEVICE="/dev/$1"
+    shift
+else
+    DEVICE="/dev/sda1"
+fi
 MOUNT_POINT=${2:-$DEFAULT_MOUNT_POINT}
 
 # Check if the device exists
