@@ -21,9 +21,9 @@ fi
 
 script_path="$(realpath "$0")"
 parent_folder="$(dirname "$script_path")"
-log_folder="$parent_folder/../logs"
 user="$PI_USER"
 workingDirectory="$(dirname "$(dirname "$(realpath "$0")")")"
+log_folder="$workingDirectory/logs"
 
 # Ensure the logs directory exists
 mkdir -p "$log_folder"
