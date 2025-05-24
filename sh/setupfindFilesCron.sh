@@ -1,5 +1,14 @@
 #!/bin/bash
 
+if [ -f .env ]; then
+    set -a
+    . .env
+    set +a
+fi
+
+ssd_path="$SSD_PATH"
+hdd_path="$HDD_PATH"
+
 # Function to add cron job if it doesn't already exist
 add_cron_job_if_not_exists() {
     local cron_job="$1"    # Cron job to add
@@ -46,7 +55,7 @@ create_cron_job() {
     mkdir -p "$log_folder"
 
     # Define the cron job
-    local cron_job="0 2 * * * /bin/bash -c 'sudo find /home/pi/smbshare -type f -atime -3 -print -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && sudo find /home/pi/smbshare -type f \( -atime +3 -o ! -atime -7 \) -print -exec mv -n {} /media/pi/$secondary_drive \;' >> $log_file 2>&1"
+    local cron_job="0 2 * * * /bin/bash -c 'sudo find /media/pi/smbshare -type f -atime -3 -print -exec cp -u --preserve=all {} /media/pi/$preferred_drive \; && sudo find /media/pi/smbshare -type f \( -atime +3 -o ! -atime -7 \) -print -exec mv -n {} /media/pi/$secondary_drive \;' >> $log_file 2>&1"
 
     # Add the cron job if it doesn't already exist
     add_cron_job_if_not_exists "$cron_job" "$log_file"

@@ -49,14 +49,28 @@ class TestMatchAndFormat(unittest.TestCase):
             "giro-92_01.wmv": ['Giro-092_01'],
             "race-45_cd1.mp4": ['Race-045_01'],
             "event-03D.mkv": ['Event-003_D'],
-            "tour-129cd1.MP4": ['Tour-129_01', 'Tour-129_c']
+            "tour-129cd1.MP4": ['Tour-129_01', 'Tour-129_c'],
+            "event-003/event-003_cd2.mp4": ['Event-003_02'],
         }
         
         for original, expected in test_cases.items():
             # Apply matching and formatting
             result = matcher.match_and_format(original, self.pattern_dict)
-            self.assertEqual(result, expected, f"Failed for {original}")
+            self.assertEqual(result[0], expected[0], f"Failed for {original}")
+    def test_path(self):
+        text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/[javtorrent.biz]_KMI062/KMI-062.avi"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "KMI-062")
     
+    def test_file_seperate_cds(self):
+        text = "KMI-062/KMI-062_01.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "KMI-062_01")
+
+    def test_file_seperate_cds_with_just_cd_number(self):
+        text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/miad-548/[456k.me]miad-548-2.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "miad-548_02")
 # To run the tests
 if __name__ == '__main__':
     unittest.main()

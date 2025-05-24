@@ -37,7 +37,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$user
+User=root
 
 ExecStart=/bin/bash $workingDirectory/android/listen_adb.sh
 Restart=on-failure
