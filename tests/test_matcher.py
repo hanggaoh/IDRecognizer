@@ -71,6 +71,41 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/miad-548/[456k.me]miad-548-2.mp4"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "miad-548_02")
+
+    def test_prefix_website(self):
+        text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/MMPB-026/hhd800.com@MMPB-026.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "MMPB-026")
+    def test_no_seperator(self):
+        text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/140212[22ID-007]辻さき BEST SELECTION 4時間/22ID007.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "22ID-007")
+
+    def test_series_formatting(self):
+        text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/GIRO-81/GIRO81_03.wmv"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "GIRO-081_03")
+
+    def test_weird_AB_formatting(self):
+        text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/SSPD-081/3xplanet_SSPD-081HDB.wmv"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "SSPD-081_B")
+    
+    def test_match_no_dash_but_space(self):
+        text = "MIGD 028 (Mosaic Removed)W真性中出し 早川瀬里奈 原千尋 (Chihiro Hara & Serina Hayakawa)/MIGD 028 uncensored.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "MIGD-028")
+
+    def test_match_no_dash(self):
+        text = "zuko025.avi"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "zuko-025")
+        
+    def test_letter_space_digits(self):
+        text = "IDBD-304   A.avi"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "IDBD-304_A")
+
 # To run the tests
 if __name__ == '__main__':
     unittest.main()

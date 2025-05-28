@@ -1,23 +1,9 @@
 # sanitize_filename.py
 import sys
-import os
-from matcher.matcher import match_and_format
-from utils.constants import patterns
-
-def formatName(destination_Folder, file_name):
-    formatedName = match_and_format(file_name, patterns)
-    extension = file_name.split(".")[-1]
-    destination_name = f"{formatedName[0].upper()}.{extension}" if len(formatedName) > 0 else file_name
-
-    # Join the base directory with the sanitized filename
-    corrected_path = os.path.join(destination_Folder, destination_name_remove_duplicate)
-    return corrected_path
+from utils.formatter import PathFormatter
 
 if __name__ == "__main__":
-    # The input file path will be passed as the first argument
     destination_Folder = sys.argv[1]
-    file_name = sys.argv[2]
+    origin_path = sys.argv[2]
+    print(PathFormatter.get_corrected_path(destination_Folder, origin_path))
 
-    corrected_path=formatName(destination_Folder, file_name)
-    # Print the corrected path, which will be used by the shell script
-    print(corrected_path)
