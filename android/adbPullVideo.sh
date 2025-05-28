@@ -29,7 +29,7 @@ timestamp() {
 
 echo "$(timestamp) Destination folder set to: $destination_folder_on_host"
 mkdir -p "$destination_folder_on_host"
-
+echo "$(timestamp) Parent folder set to: $parent_folder"
 # Clean up any existing temp file
 > "$temp_file_list"
 
@@ -54,6 +54,8 @@ find "$parent_folder" -type f \( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.m
 done
 EOF
 
+cat "$temp_file_list"
+
 # Exit early if skip_pull is set
 if [ $skip_pull -eq 1 ]; then
   echo "$(timestamp) Skipping video pull as --skip is provided."
@@ -68,9 +70,11 @@ trap 'echo "Interrupted. Cleaning up $sanitized_filename"; [ -f "$sanitized_file
     echo "$(timestamp) Processing $video_file"
 
     if [ "$format_flag" = true ]; then
-    corrected_path=$(python3 "$sanitize_script" "$destination_folder_on_host" "$video_file")
+      echo "$(timestamp) Formatting filename for $video_file"
+      corrected_path=$(python3 "$sanitize_script" "$destination_folder_on_host" "$video_file")
     else
-    corrected_path="$destination_folder_on_host/$base_filename"
+      echo "$(timestamp) No formatting applied to filename for $video_file"
+      corrected_path="$destination_folder_on_host/$base_filename"
     fi
 
     sanitized_filename=$(echo "$corrected_path" | sed 's/[][()|&;!]/_/g')

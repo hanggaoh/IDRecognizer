@@ -54,8 +54,10 @@ find "$parent_folder" -maxdepth 1 -type f -iname "*.torrent" | while read torren
 done
 EOF
 
+cat $temp_file_list
+
 # Disable debugging
-set +x
+# set +x
 
 # Now read the file paths and pull each file to the host machine
 while IFS= read -r video_file <&3; do
