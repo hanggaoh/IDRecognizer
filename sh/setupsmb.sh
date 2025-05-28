@@ -11,10 +11,13 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+workingDir="$(cd "$(dirname "$0")/.." && pwd)"
+
 pi_user="$PI_USER"
 smb_user="$SMB_USER"
 ssd_path="$SSD_PATH"
 hdd_path="$HDD_PATH"
+logs_path="$workingDir/logs"
 smb_password="$SMB_PASSWORD"
 
 # Check if required environment variables are set
@@ -24,15 +27,34 @@ if [ -z "$pi_user" ] || [ -z "$smb_user" ] || [ -z "$ssd_path" ] || [ -z "$hdd_p
     exit 1
 fi
 
-# Remove any existing Samba installation
-echo "Removing any existing Samba installation..."
-sudo apt remove --purge -y samba samba-common
-sudo apt autoremove -y
+# Parse arguments
+REINSTALL=0
+for arg in "$@"; do
+    case "$arg" in
+        --reinstall|-r)
+            REINSTALL=1
+            ;;
+    esac
+done
 
-# Install Samba
-echo "Installing Samba..."
-sudo apt update
-sudo apt install -y samba
+# Function to check if Samba is installed
+is_samba_installed() {
+    dpkg -s samba >/dev/null 2>&1
+}
+
+if [ "$REINSTALL" -eq 1 ]; then
+    echo "Removing any existing Samba installation..."
+    sudo apt remove --purge -y samba samba-common
+    sudo apt autoremove -y
+fi
+
+if ! is_samba_installed; then
+    echo "Samba is not installed. Installing Samba..."
+    sudo apt update
+    sudo apt install -y samba
+else
+    echo "Samba is already installed."
+fi
 
 # Verify if smb.conf file exists; create it if necessary
 if [ ! -f /etc/samba/smb.conf ]; then
@@ -62,6 +84,25 @@ sudo chown $pi_user:$pi_user $ssd_path
 sudo chown $pi_user:$pi_user $hdd_path
 sudo chmod 2775 $ssd_path
 sudo chmod 2775 $hdd_path
+
+# Set permissions for the logs directory
+echo "Setting permissions for the logs directory..."
+[ ! -d "$logs_path" ] && mkdir -p $logs_path
+sudo chown $pi_user:$pi_user $logs_path
+sudo chmod 2775 $logs_path
+
+# Add smb_user to the group that owns the shared directories
+sudo usermod -aG $pi_user $smb_user
+
+# Set group ownership of the shared directories to $pi_user group
+sudo chown -R $pi_user:$pi_user $ssd_path
+sudo chown -R $pi_user:$pi_user $hdd_path
+sudo chown -R $pi_user:$pi_user $logs_path
+
+# Ensure permissions are set to 2775 (setgid)
+sudo chmod 2775 $ssd_path
+sudo chmod 2775 $hdd_path
+sudo chmod 2775 $logs_path
 
 # Backup current smb.conf
 echo "Backing up the current Samba configuration..."
@@ -103,6 +144,14 @@ sudo bash -c "cat >> /etc/samba/smb.conf << EOF
    create mask = 0775
    directory mask = 0775
    valid users = ${smb_user}
+   
+[logs]
+   path = ${logs_path}
+   browseable = yes
+   writable = yes
+   create mask = 0775
+   directory mask = 0775
+   valid users = ${smb_user}
 EOF"
 
 # Set Samba user and password for pi
@@ -132,4 +181,4 @@ else
     exit 1
 fi
 
-echo "Samba setup is complete. Directories $ssd_path and $hdd_path are now shared."
+echo "Samba setup is complete."
