@@ -1,8 +1,15 @@
 #!/bin/bash
-exec >> /home/pi/IDRecognizer/logs/listen_adb.log 2>&1
+workingDir="$(dirname "$(dirname "$0")")"
+exec >> $workingDir/logs/listen_adb.log 2>&1
 echo "Script started at $(date)"
-# Path to the script you want to run when a device is detected
-script_to_run="/home/pi/IDRecognizer/android/adbPullVideo.sh"
+
+cd "$workingDir"
+if [ -f .env ]; then
+    set -a
+    . .env
+    set +a
+fi
+script_to_run="$workingDir/android/adbPullVideo.sh"
 
 while true; do
   # Get the list of connected devices
@@ -12,7 +19,7 @@ while true; do
   if [ -n "$connected_devices" ]; then
     echo "Device detected: $connected_devices"
     # Run your script
-    bash "$script_to_run"
+    bash "$script_to_run" -f
   fi
 
   # Wait for a short time before checking again

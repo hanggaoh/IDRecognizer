@@ -1,9 +1,28 @@
 #!/bin/bash
 
+# Load environment variables from .env file if it exists
+if [ -f .env ]; then
+    set -a
+    . .env
+    set +a
+fi
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
+
+pi_user="$PI_USER"
+smb_user="$SMB_USER"
+ssd_path="$SSD_PATH"
+hdd_path="$HDD_PATH"
+smb_password="$SMB_PASSWORD"
+
+# Check if required environment variables are set
+if [ -z "$pi_user" ] || [ -z "$smb_user" ] || [ -z "$ssd_path" ] || [ -z "$hdd_path" ] || [ -z "$smb_password" ]; then
+    echo "Error: One or more required environment variables are not set."
+    echo "Please ensure PI_USER, SMB_USER, SSD_PATH, HDD_PATH, and SMB_PASSWORD are set."
+    exit 1
+fi
 
 # Remove any existing Samba installation
 echo "Removing any existing Samba installation..."
@@ -34,15 +53,15 @@ fi
 
 # Create shared directories if they don't exist
 echo "Creating shared directories..."
-[ ! -d "/home/pi/ssd" ] && mkdir -p /home/pi/ssd
-[ ! -d "/home/pi/smbshare" ] && mkdir -p /home/pi/smbshare
+[ ! -d "$ssd_path" ] && mkdir -p $ssd_path
+[ ! -d "$hdd_path" ] && mkdir -p $hdd_path
 
 # Set permissions for the directories
 echo "Setting permissions for the shared directories..."
-sudo chown pi:pi /home/pi/ssd
-sudo chown pi:pi /home/pi/smbshare
-sudo chmod 2775 /home/pi/ssd
-sudo chmod 2775 /home/pi/smbshare
+sudo chown $pi_user:$pi_user $ssd_path
+sudo chown $pi_user:$pi_user $hdd_path
+sudo chmod 2775 $ssd_path
+sudo chmod 2775 $hdd_path
 
 # Backup current smb.conf
 echo "Backing up the current Samba configuration..."
@@ -50,7 +69,7 @@ sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak
 
 # Configure smb.conf to add shared directories
 echo "Configuring Samba shares..."
-sudo bash -c 'cat >> /etc/samba/smb.conf << EOF
+sudo bash -c "cat >> /etc/samba/smb.conf << EOF
 [global]
    unix extensions = no
    max protocol = SMB3
@@ -63,35 +82,41 @@ sudo bash -c 'cat >> /etc/samba/smb.conf << EOF
    fruit:wipe_intentionally_left_blank_rfork = yes 
    fruit:delete_empty_adfiles = yes 
    fruit:posix_rename = yes 
-   dos charset = UTF-8
    unix charset = UTF-8
-   display charset = UTF-8
    mangled names = yes
    mangling method = hash
    name resolve order = bcast host
    max stat cache size = 64
 
 [ssd]
-   path = /media/pi/ssd
+   path = ${ssd_path}
    browseable = yes
    writable = yes
    create mask = 0775
    directory mask = 0775
-   valid users = pi
+   valid users = ${smb_user}
 
-[smbshare]
-   path = /home/pi/smbshare
+[hdd]
+   path = ${hdd_path}
    browseable = yes
    writable = yes
    create mask = 0775
    directory mask = 0775
-   valid users = pi
-EOF'
+   valid users = ${smb_user}
+EOF"
 
 # Set Samba user and password for pi
 if command_exists smbpasswd; then
-    echo "Setting Samba password for user 'pi'..."
-    sudo smbpasswd -a pi
+    echo "Setting Samba password for user '$smb_user'..."
+    if [ -z "$smb_password" ]; then
+        echo "Error: smb_password environment variable is not set."
+        exit 1
+    fi
+    # Ensure the Samba user exists
+    if ! id "$smb_user" &>/dev/null; then
+        sudo useradd -M -s /sbin/nologin "$smb_user"
+    fi
+    echo -ne "$smb_password\n$smb_password" | sudo smbpasswd -a -s "$smb_user"
 else
     echo "Error: smbpasswd command not found. Samba may not be correctly installed."
     exit 1
@@ -107,4 +132,4 @@ else
     exit 1
 fi
 
-echo "Samba setup is complete. Directories /home/pi/ssd and /home/pi/smbshare are now shared."
+echo "Samba setup is complete. Directories $ssd_path and $hdd_path are now shared."

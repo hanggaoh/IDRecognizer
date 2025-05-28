@@ -162,7 +162,7 @@ TARGET_FOLDER="/home/pi/${!#}"
 if [[ "$TARGET_FOLDER" == "/home/pi/"* && $# -gt 1 ]]; then
     DISK_IDENTIFIERS=("${@:1:$#-1}")
 else
-    TARGET_FOLDER="/home/pi/smbshare"  # Default target folder
+    TARGET_FOLDER="/media/pi/smbshare"  # Default target folder
     DISK_IDENTIFIERS=("$@")
 fi
 

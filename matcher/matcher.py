@@ -16,7 +16,8 @@ def match_and_format(text, pattern_dict):
     results = []
     
     for pattern, format_pattern in pattern_dict.items():
-        match = re.search(pattern, text, re.IGNORECASE)
+        matches = list(re.finditer(pattern, text, re.IGNORECASE))
+        match = matches[-1] if matches else None
         if match:
             logger.debug(f"found {match.group(0)} with {pattern}")
             if callable(format_pattern):

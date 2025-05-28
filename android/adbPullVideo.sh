@@ -4,7 +4,7 @@
 parent_folder="/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload"
 
 destination_folder_on_host="/media/pi/ssd"
-temp_file_list="videos.txt"
+temp_file_list="$(mktemp /tmp/adb_videos_XXXXXX.txt)"
 sanitize_script="./formatFile.py"
 format_flag=false
 skip_pull=0
@@ -65,9 +65,10 @@ trap 'echo "Interrupted. Cleaning up $sanitized_filename"; [ -f "$sanitized_file
   # Now read the file paths and pull each file to the host machine
   while IFS= read -r video_file <&3; do
     base_filename=$(basename "$video_file")
+    echo "$(timestamp) Processing $video_file"
 
     if [ "$format_flag" = true ]; then
-    corrected_path=$(python3 "$sanitize_script" "$destination_folder_on_host" "$base_filename")
+    corrected_path=$(python3 "$sanitize_script" "$destination_folder_on_host" "$video_file")
     else
     corrected_path="$destination_folder_on_host/$base_filename"
     fi
@@ -76,7 +77,7 @@ trap 'echo "Interrupted. Cleaning up $sanitized_filename"; [ -f "$sanitized_file
     echo "$(timestamp) Pulling $video_file to $sanitized_filename"
 
     # Use properly quoted paths for adb pull
-    adb shell "cat \"$video_file\"" | cat > "$sanitized_filename"
+    adb shell cat \"${video_file//\"/\\\"}\" | cat > "$sanitized_filename"
 
     # Check if the adb pull command was successful
     if [ $? -eq 0 ]; then
