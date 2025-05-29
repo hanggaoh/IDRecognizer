@@ -106,6 +106,11 @@ class TestMatchAndFormat(unittest.TestCase):
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "IDBD-304_A")
 
+    def test_letter_digits(self):
+        text = "AGEOM012b.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "AGEOM-012_B")
+
 # To run the tests
 if __name__ == '__main__':
     unittest.main()
