@@ -115,6 +115,13 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "SW179.avi"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "SW-179")
+
+    def test_skip_fhd_in_the_end(self):
+        text = "MIGD-028FHD.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "MIGD-028")
+
+
 # To run the tests
 if __name__ == '__main__':
     unittest.main()
