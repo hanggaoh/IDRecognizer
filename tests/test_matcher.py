@@ -111,6 +111,10 @@ class TestMatchAndFormat(unittest.TestCase):
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "AGEOM-012_B")
 
+    def test_two_letter_no_dash(self):
+        text = "SW179.avi"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "SW-179")
 # To run the tests
 if __name__ == '__main__':
     unittest.main()

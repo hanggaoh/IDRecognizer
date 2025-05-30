@@ -6,3 +6,4 @@ videos.txt
 torrents.txt
 qbittorrent/*
 .env
+.venv/*
