@@ -121,7 +121,14 @@ class TestMatchAndFormat(unittest.TestCase):
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "MIGD-028")
 
-
+    def test_numbers_in_the_front(self):
+        text = "259LUXU-1833.H265.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "LUXU-1833")
+    def test_numners_in_the_front_few(self):
+        text = "3MADO-005"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "MADO-005")
 # To run the tests
 if __name__ == '__main__':
     unittest.main()
