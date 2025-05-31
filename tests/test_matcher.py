@@ -129,6 +129,10 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "3MADO-005"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "MADO-005")
+    def test_zeros_in_the_middle(self):
+        text = "miad00574hhb2"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "miad-574_02")
 # To run the tests
 if __name__ == '__main__':
     unittest.main()
