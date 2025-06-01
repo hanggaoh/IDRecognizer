@@ -17,6 +17,9 @@ pi_user="$PI_USER"
 smb_user="$SMB_USER"
 ssd_path="$SSD_PATH"
 hdd_path="$HDD_PATH"
+movie_path="$SMB_MOVIES_PATH"
+movie_user="$SMB_MOVIES_USER"
+movie_user_password="$SMB_MOVIES_USER_PASSWORD"
 logs_path="$workingDir/logs"
 smb_password="$SMB_PASSWORD"
 
@@ -56,22 +59,15 @@ else
     echo "Samba is already installed."
 fi
 
-# Verify if smb.conf file exists; create it if necessary
-if [ ! -f /etc/samba/smb.conf ]; then
-    echo "Creating default Samba configuration file..."
-    echo "[global]
-        workgroup = WORKGROUP
-        server string = %h server (Samba)
-        netbios name = raspberrypi
-        security = user
-        map to guest = bad user
-        dns proxy = no
 
-    [homes]
-        comment = Home Directories
-        browseable = no
-        writable = yes" | sudo tee /etc/samba/smb.conf
-fi
+echo "Creating default Samba configuration file..."
+echo "
+[homes]
+    valid users = %S
+    read only = no
+    browseable = no
+    writable = yes" | sudo tee /etc/samba/smb.conf
+
 
 # Create shared directories if they don't exist
 echo "Creating shared directories..."
@@ -84,6 +80,30 @@ sudo chown $pi_user:$pi_user $ssd_path
 sudo chown $pi_user:$pi_user $hdd_path
 sudo chmod 2775 $ssd_path
 sudo chmod 2775 $hdd_path
+
+echo "Creating home for smb_user..."
+if [ -d "/home/$smb_user" ]; then
+    echo "Home directory for smb_user already exists."
+    rm -rf /home/$smb_user/*
+    echo "Cleared contents of /home/$smb_user."
+else
+    echo "Creating home directory for smb_user..."
+    sudo mkdir -p /home/$smb_user
+    sudo chown $smb_user:$smb_user /home/$smb_user
+    sudo chmod 755 /home/$smb_user
+fi
+ln -s $ssd_path /home/$smb_user/ssd
+ln -s $hdd_path /home/$smb_user/hdd
+
+if [ -d "/home/$movie_user" ]; then
+    echo "Home directory for movie_user already exists."
+else
+    echo "Creating home directory for movie_user..."
+    sudo mkdir -p /home/$movie_user
+    sudo chown $movie_user:$movie_user /home/$movie_user
+    sudo chmod 755 /home/$movie_user
+fi
+ln -s $movie_path /home/$movie_user/movies
 
 # Set permissions for the logs directory
 echo "Setting permissions for the logs directory..."
@@ -128,30 +148,54 @@ sudo bash -c "cat >> /etc/samba/smb.conf << EOF
    mangling method = hash
    name resolve order = bcast host
    max stat cache size = 64
-
 [ssd]
-   path = ${ssd_path}
-   browseable = yes
-   writable = yes
-   create mask = 0775
-   directory mask = 0775
-   valid users = ${smb_user}
+    path = ${ssd_path}
+    browseable = no
+    writable = yes
+    create mask = 0775
+    directory mask = 0775
+    valid users = ${smb_user}
+    force user = ${smb_user}
+    admin users = ${smb_user}
+    guest ok = no
+    public = no
 
 [hdd]
-   path = ${hdd_path}
-   browseable = yes
-   writable = yes
-   create mask = 0775
-   directory mask = 0775
-   valid users = ${smb_user}
-   
+    path = ${hdd_path}
+    browseable = no
+    writable = yes
+    create mask = 0775
+    directory mask = 0775
+    valid users = ${smb_user}
+    force user = ${smb_user}
+    admin users = ${smb_user}
+    guest ok = no
+    public = no
+
 [logs]
-   path = ${logs_path}
-   browseable = yes
-   writable = yes
-   create mask = 0775
-   directory mask = 0775
-   valid users = ${smb_user}
+    path = ${logs_path}
+    browseable = no
+    writable = yes
+    create mask = 0775
+    directory mask = 0775
+    valid users = ${smb_user}
+    force user = ${smb_user}
+    admin users = ${smb_user}
+    guest ok = no
+    public = no
+
+[movies]
+    path = ${movie_path}
+    browseable = no
+    writable = yes
+    create mask = 0775
+    directory mask = 0775
+    valid users = ${movie_user}
+    force user = ${movie_user}
+    force group = ${movie_user}
+    guest ok = no
+    public = no
+    read only = no
 EOF"
 
 # Set Samba user and password for pi
@@ -169,6 +213,18 @@ if command_exists smbpasswd; then
 else
     echo "Error: smbpasswd command not found. Samba may not be correctly installed."
     exit 1
+fi
+
+# Set Samba user and password for movie user
+if [ -n "$movie_user" ] && [ -n "$movie_user_password" ]; then
+    echo "Setting Samba password for movie user '$movie_user'..."
+    # Ensure the movie user exists
+    if ! id "$movie_user" &>/dev/null; then
+        sudo useradd -M -s /sbin/nologin "$movie_user"
+    fi
+    echo -ne "$movie_user_password\n$movie_user_password" | sudo smbpasswd -a -s "$movie_user"
+else
+    echo "Skipping movie user setup: SMB_MOVIES_USER or SMB_MOVIES_USER_PASSWORD not set."
 fi
 
 # Restart Samba services
