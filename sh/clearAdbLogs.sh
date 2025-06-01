@@ -1,0 +1,1 @@
+sudo sh -c 'cat logs/listen_adb.log >> logs/adb_log_archieve.log && > logs/listen_adb.log'
