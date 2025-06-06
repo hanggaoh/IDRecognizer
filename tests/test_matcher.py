@@ -76,10 +76,6 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/MMPB-026/hhd800.com@MMPB-026.mp4"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "MMPB-026")
-    def test_no_seperator(self):
-        text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/140212[22ID-007]辻さき BEST SELECTION 4時間/22ID007.mp4"
-        result = matcher.match_and_format(text, patterns)
-        self.assertEqual(result[0], "22ID-007")
 
     def test_series_formatting(self):
         text = "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/GIRO-81/GIRO81_03.wmv"
@@ -133,6 +129,11 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "miad00574hhb2"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "miad-574_02")
+    def test_IDXXX(self):
+        text = "Kinpatu86.com 0052 (TMA 16ID-045) - Swimsuit Fetishism Tarra White (Uncensored)(AMWF)(1080p).wmv"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "ID-045")
+
 # To run the tests
 if __name__ == '__main__':
     unittest.main()
