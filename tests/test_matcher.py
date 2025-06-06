@@ -133,6 +133,10 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "Kinpatu86.com 0052 (TMA 16ID-045) - Swimsuit Fetishism Tarra White (Uncensored)(AMWF)(1080p).wmv"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "ID-045")
+    def test_skip_V_in_the_end(self):
+        text = "ANND-128-AV.wmv"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "ANND-128")
 
 # To run the tests
 if __name__ == '__main__':
