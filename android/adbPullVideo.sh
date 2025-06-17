@@ -1,9 +1,16 @@
 #!/bin/bash
+workingDir="$(dirname "$(dirname "$0")")"
 
+cd "$workingDir"
+if [ -f .env ]; then
+    set -a
+    . .env
+    set +a
+fi
 # Define the paths
 parent_folder="/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload"
 
-destination_folder_on_host="/media/pi/ssd"
+destination_folder_on_host="$ADB_PULL_DESTINATION"
 temp_file_list="$(mktemp /tmp/adb_videos_XXXXXX.txt)"
 sanitize_script="./formatFile.py"
 format_flag=false
