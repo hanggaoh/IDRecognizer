@@ -3,12 +3,16 @@
 # Navigate to the directory where mvVideo.py is located
 # Change this to the actual directory
 # Run the Python script with the first destination
-cd /home/pi/IDRecognizer
-sudo python3 ./mvVideo.py /media/pi/ssd /media/pi/sda1 60
+workingDir="$(dirname "$(dirname "$0")")"
 
-# Check if the script was successful
-if [ $? -ne 0 ]; then
-    echo "Primary destination failed, attempting alternative destination..."
-    # Run the Python script with an alternative destination
-    sudo python3 ./mvVideo.py /media/pi/ssd /media/pi/sdb1 60
+cd "$workingDir"
+if [ -f .env ]; then
+    set -a
+    . .env
+    set +a
 fi
+
+ssd_path="$SSD_PATH"
+hdd_path="$HDD_PATH"
+
+sudo python3 ./mvVideo.py $ssd_path $hdd_path 60
