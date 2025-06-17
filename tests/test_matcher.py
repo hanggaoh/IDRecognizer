@@ -137,6 +137,10 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "ANND-128-AV.wmv"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "ANND-128")
+    def test_skip_4k(self):
+        text = "sone-532-4k.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "sone-532")
 
 # To run the tests
 if __name__ == '__main__':
