@@ -141,6 +141,10 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "sone-532-4k.mp4"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "sone-532")
+    def test_10mu(self):
+        text = "[Thz.la]061218_01-10mu-1080p.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "10mu-061218-01")
 
 # To run the tests
 if __name__ == '__main__':
