@@ -4,7 +4,7 @@ from logger_setup import get_logger
 
 logger = get_logger()
 
-def match_and_format(text, pattern_dict):
+def match_and_format(text, pattern_dict, greedy = False):
     """
     This function checks the input text against multiple regex patterns and formats the matched part
     based on the provided format strings in pattern_dict.
@@ -26,5 +26,7 @@ def match_and_format(text, pattern_dict):
                 formatted_result = re.sub(pattern, format_pattern, match.group(0))
             logger.debug(f"formatted_result: {formatted_result}")
             results.append(formatted_result)
+            if not greedy:
+                break
     
     return results
