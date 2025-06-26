@@ -89,7 +89,7 @@ def check_duplicate_videos(folder_path, alternative_folder_path):
                 os.remove(dup_path)
                 continue
             # Compare durations (allow small difference, e.g., 1 second)
-            if abs(orig_info['duration'] - dup_info['duration']) < 20.0:
+            if abs(orig_info['duration'] / dup_info['duration'] - 1) < 0.01:
                 # Keep higher resolution
                 orig_res = orig_info['width'] * orig_info['height']
                 dup_res = dup_info['width'] * dup_info['height']
