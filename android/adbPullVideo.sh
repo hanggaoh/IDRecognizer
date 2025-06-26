@@ -90,11 +90,18 @@ trap 'echo "Interrupted. Cleaning up $sanitized_filename"; [ -f "$sanitized_file
     sanitized_filename=$(echo "$corrected_path" | sed 's/[][()|&;!]/_/g')
     echo "$(timestamp) Pulling $video_file to $sanitized_filename"
 
+    # Check if adb device is connected before pulling
+    if ! adb get-state 1>/dev/null 2>&1; then
+      echo "$(timestamp) No adb device detected. Skipping $video_file."
+      continue
+    fi
+
     # Use properly quoted paths for adb pull
     adb shell cat \"${video_file//\"/\\\"}\" | cat > "$sanitized_filename"
+    adb_status=$?
 
     # Check if the adb pull command was successful
-    if [ $? -eq 0 ]; then
+    if [ $adb_status -eq 0 ]; then
     echo "$(timestamp) Successfully pulled $video_file. Deleting from device."
 
     # Use properly quoted paths for adb rm
