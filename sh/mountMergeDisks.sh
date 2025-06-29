@@ -7,7 +7,7 @@ if [ -f .env ]; then
 fi
 
 pi_user="$PI_USER"
-hdd_path="$HDD_PATH"
+hdd_path="${MOUNT_POINT:-/mnt/merged}"
 
 # Ensure the script is run as root
 check_root() {
@@ -156,9 +156,8 @@ mount_device() {
 
 # Combine mount points using mergerfs
 combine_mount_points() {
-    local preferred_mount="${mount_points[0]}"
-    local secondary_mount="${mount_points[1]}"
     local combined_mount_point="$hdd_path"
+    echo "combined_mount_point: $combined_mount_point"
 
     mkdir -p "$combined_mount_point"
     if [ $? -ne 0 ]; then
@@ -166,49 +165,62 @@ combine_mount_points() {
         exit 1
     fi
 
-    mergerfs "$preferred_mount:$secondary_mount" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
+    # Join all mount points with colon
+    local mergerfs_sources
+    mergerfs_sources=$(IFS=:; echo "${mount_points[*]}")
+
+    echo "Running: mergerfs \"$mergerfs_sources\" \"$combined_mount_point\" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty"
+    mergerfs "$mergerfs_sources" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
     if [ $? -ne 0 ]; then
-        echo "Error: Failed to mount mergerfs"
+        echo "Error: Failed to mount mergerfs $mergerfs_sources"
         exit 1
     fi
 
-    # Add the mergerfs entry to a systemd mount unit file
-    create_systemd_unit "$preferred_mount" "$secondary_mount" "$combined_mount_point"
+    # Pass all sources to the systemd unit
+    create_systemd_unit "$mergerfs_sources" "$combined_mount_point"
 
     echo "Mergerfs mounted successfully with preferred drive at $preferred_mount"
 }
 
 # Create systemd unit for mergerfs mount
 create_systemd_unit() {
-    local preferred_mount="$1"
-    local secondary_mount="$2"
-    local combined_mount_point="$3"
+local mergerfs_sources="$1"
+    local combined_mount_point="$2"
 
-    # Create the combined mount point directory if it doesn't exist
     mkdir -p "$combined_mount_point"
 
-    # Write the systemd mount unit file
-    cat <<EOF > /etc/systemd/system/media-${pi_user}-hdd.mount
+    cat <<EOF > /etc/systemd/system/mergerfs-combined.service
 [Unit]
-Description=MergerFS Mount for $combined_mount_point
+Description=MergerFS Service for $combined_mount_point
 Requires=network-online.target
 After=network-online.target
-[Mount]
-What=$preferred_mount:$secondary_mount
-Where=$combined_mount_point
-Type=fuse.mergerfs
-Options=defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/mergerfs "$mergerfs_sources" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-    # Reload systemd daemon and enable the mount
     systemctl daemon-reload
-    systemctl enable media-${pi_user}-hdd.mount
-    systemctl start media-${pi_user}-hdd.mount
+    systemctl enable mergerfs-combined.service
+    systemctl start mergerfs-combined.service
 
-    echo "Systemd unit for mergerfs mount created and enabled."
+    echo "Systemd service for mergerfs mount created and enabled."
+}
+
+clear_mergerfs_mount() {
+    local unit_name="mergerfs-combined.service"
+    echo "Disabling and removing $unit_name..."
+
+    sudo systemctl stop "$unit_name"
+    sudo systemctl disable "$unit_name"
+    sudo rm -f "/etc/systemd/system/$unit_name"
+    sudo systemctl daemon-reload
+
+    echo "$unit_name has been disabled and removed."
 }
 
 # Main function
@@ -228,6 +240,7 @@ main() {
 
     echo "Cleaning previous mounts: ${devices[@]}"
     clean_previous_mounts "${devices[@]}"
+    clear_mergerfs_mount
 
     if $unmount_only; then
         echo "Unmount-only mode enabled. Exiting after cleaning previous mounts."
