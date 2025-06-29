@@ -215,11 +215,28 @@ EOF
 main() {
     check_root
     install_mergerfs
-    echo "Cleaning previous mounts: $@"
-    clean_previous_mounts "$@"
+    # Check for -u (unmount only) flag and filter it from device list
+    unmount_only=false
+    devices=()
+    for arg in "$@"; do
+        if [ "$arg" == "-u" ]; then
+            unmount_only=true
+        else
+            devices+=("$arg")
+        fi
+    done
+
+    echo "Cleaning previous mounts: ${devices[@]}"
+    clean_previous_mounts "${devices[@]}"
+
+    if $unmount_only; then
+        echo "Unmount-only mode enabled. Exiting after cleaning previous mounts."
+        exit 0
+    fi
+    
 
     mount_points=()
-    for device in "$@"; do
+    for device in "${devices[@]}"; do
         mount_device "$device"
     done
 
