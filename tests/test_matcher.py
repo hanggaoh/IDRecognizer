@@ -145,6 +145,10 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "[Thz.la]061218_01-10mu-1080p.mp4"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "10mu-061218-01")
+    def test_skip_atid(self):
+        text = "ATID-618.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "ATID-618")
 
 # To run the tests
 if __name__ == '__main__':
