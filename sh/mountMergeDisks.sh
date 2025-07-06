@@ -191,13 +191,14 @@ local mergerfs_sources="$1"
 
     cat <<EOF > /etc/systemd/system/mergerfs-combined.service
 [Unit]
-Description=MergerFS Service for $combined_mount_point
-Requires=network-online.target
-After=network-online.target
+Description=MergerFS Service for /media/gh/hdd
+Requires=network-online.target local-fs.target
+After=network-online.target local-fs.target
 
 [Service]
 Type=simple
 ExecStart=/usr/bin/mergerfs "$mergerfs_sources" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
+ExecStop=/bin/fusermount -u "$combined_mount_point"
 Restart=on-failure
 
 [Install]
