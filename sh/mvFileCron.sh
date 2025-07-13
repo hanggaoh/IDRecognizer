@@ -15,4 +15,4 @@ fi
 ssd_path="$SSD_PATH"
 hdd_path="$HDD_PATH"
 
-sudo python3 ./mvVideo.py $ssd_path $hdd_path 60
+sudo python3 ./mvVideo.py $ssd_path $hdd_path 40
