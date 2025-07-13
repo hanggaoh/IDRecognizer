@@ -159,6 +159,14 @@ combine_mount_points() {
     local combined_mount_point="$hdd_path"
     echo "combined_mount_point: $combined_mount_point"
 
+    if [ -d "$combined_mount_point" ]; then
+        # Check if it's a stale mount (e.g., "Transport endpoint is not connected")
+        if mountpoint -q "$combined_mount_point" || [ "$(ls -ld "$combined_mount_point" 2>&1 | grep 'Transport endpoint is not connected')" ]; then
+            echo "Stale mount detected at $combined_mount_point, attempting to unmount..."
+            fusermount -u "$combined_mount_point" 2>/dev/null || umount -l "$combined_mount_point" 2>/dev/null
+            rm -rf "$combined_mount_point"
+        fi
+    fi
     mkdir -p "$combined_mount_point"
     if [ $? -ne 0 ]; then
         echo "Error: Failed to create combined mount point"
@@ -194,12 +202,14 @@ local mergerfs_sources="$1"
 Description=MergerFS Service for /media/gh/hdd
 Requires=network-online.target local-fs.target
 After=network-online.target local-fs.target
+RequiresMountsFor=$(echo "$mergerfs_sources" | tr ':' ' ')
 
 [Service]
 Type=simple
 ExecStart=/usr/bin/mergerfs "$mergerfs_sources" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
 ExecStop=/bin/fusermount -u "$combined_mount_point"
 Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
