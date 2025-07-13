@@ -68,21 +68,29 @@ def check_video_files(folder_path, output_file):
                         f_out.write(f"Error processing {filename} with mediainfo: {str(e)}\n")
                         logger.debug(f"Error processing {filename} with mediainfo: {str(e)}")
                 else:
-                    # Use ffmpeg to check file for errors
+                    # Use ffprobe for a faster, shallow check of video file validity
                     try:
                         result = subprocess.run(
-                            ["ffmpeg", "-v", "error", "-i", file_path, "-f", "null", "-"],
-                            stderr=subprocess.PIPE,
-                            stdout=subprocess.DEVNULL
+                            [
+                                "ffprobe",
+                                "-v", "error",
+                                "-select_streams", "v:0",
+                                "-show_entries", "stream=codec_name,duration",
+                                "-of", "default=noprint_wrappers=1:nokey=1",
+                                file_path
+                            ],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
                         )
-                        if result.stderr:
+                        output = result.stdout.decode("utf-8").strip()
+                        if not output or result.returncode != 0:
                             f_out.write(f"{filename}\n")
-                            logger.debug(f"File {filename} has issues")
+                            logger.debug(f"File {filename} has issues (ffprobe failed or missing metadata)")
                         else:
-                            logger.debug(f"File {filename} passed integrity check")
+                            logger.debug(f"File {filename} passed shallow ffprobe check")
                     except Exception as e:
-                        f_out.write(f"Error processing {filename} with ffmpeg: {str(e)}\n")
-                        logger.debug(f"Error processing {filename} with ffmpeg: {str(e)}")
+                        f_out.write(f"Error processing {filename} with ffprobe: {str(e)}\n")
+                        logger.debug(f"Error processing {filename} with ffprobe: {str(e)}")
 
     print(f"Check completed. Results saved to {output_file}.")
 
