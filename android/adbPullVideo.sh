@@ -97,7 +97,7 @@ trap 'echo "Interrupted. Cleaning up $sanitized_filename"; [ -f "$sanitized_file
     fi
 
     # Use properly quoted paths for adb pull
-    adb shell cat \"${video_file//\"/\\\"}\" | cat > "$sanitized_filename"
+    adb shell "cat \"$video_file\"" | cat > "$sanitized_filename"
     adb_status=$?
 
     # Check if the adb pull command was successful
