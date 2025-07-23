@@ -1,5 +1,30 @@
 #!/bin/bash
 
+if [[ "$1" == "-u" ]]; then
+    echo "Uninstalling Deluge and cleaning up..."
+
+    # Stop and disable services
+    sudo systemctl stop deluged deluge-web
+    sudo systemctl disable deluged deluge-web
+
+    # Remove systemd service files
+    sudo rm -f /etc/systemd/system/deluged.service
+    sudo rm -f /etc/systemd/system/deluge-web.service
+
+    # Reload systemd daemon
+    sudo systemctl daemon-reload
+
+    # Uninstall Deluge packages
+    sudo apt remove --purge -y deluge deluged deluge-console deluge-web
+    sudo apt autoremove -y
+
+    # Remove Deluge config directory
+    sudo rm -rf /home/pi/.config/deluge
+
+    echo "Deluge has been uninstalled and all related files have been removed."
+    exit 0
+fi
+
 # Update system packages
 sudo apt update && sudo apt upgrade -y
 
