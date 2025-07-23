@@ -6,7 +6,7 @@ if [ -f .env ]; then
     set +a
 fi
 
-pi_user="$PI_USER"
+OS_USER="$OS_USER"
 hdd_path="${MOUNT_POINT:-/mnt/merged}"
 
 # Ensure the script is run as root
@@ -42,23 +42,23 @@ clean_previous_mounts() {
                 echo "Warning: Failed to unmount /dev/$device. It may be busy."
             fi
         fi
-        if mount | grep -q "/media/${pi_user}/$device"; then
-            echo "Attempting to unmount /media/${pi_user}/$device..."
-            umount -f "/media/${pi_user}/$device" 2>/dev/null
+        if mount | grep -q "/media/${OS_USER}/$device"; then
+            echo "Attempting to unmount /media/${OS_USER}/$device..."
+            umount -f "/media/${OS_USER}/$device" 2>/dev/null
             if [ $? -eq 0 ]; then
-                echo "/media/${pi_user}/$device unmounted successfully."
+                echo "/media/${OS_USER}/$device unmounted successfully."
             else
-                echo "Warning: Failed to unmount /media/${pi_user}/$device. It may be busy."
+                echo "Warning: Failed to unmount /media/${OS_USER}/$device. It may be busy."
             fi
         fi
         # Check if the device is in /etc/fstab and remove the line if it exists
-        if grep -q "/media/${pi_user}/$device" /etc/fstab; then
-            echo "Removing /media/${pi_user}/$device from /etc/fstab..."
-            sed -i "\|/media/${pi_user}/$device|d" /etc/fstab
+        if grep -q "/media/${OS_USER}/$device" /etc/fstab; then
+            echo "Removing /media/${OS_USER}/$device from /etc/fstab..."
+            sed -i "\|/media/${OS_USER}/$device|d" /etc/fstab
             if [ $? -eq 0 ]; then
-            echo "/media/${pi_user}/$device removed from /etc/fstab successfully."
+            echo "/media/${OS_USER}/$device removed from /etc/fstab successfully."
             else
-            echo "Warning: Failed to remove /media/${pi_user}/$device from /etc/fstab."
+            echo "Warning: Failed to remove /media/${OS_USER}/$device from /etc/fstab."
             fi
         fi
 
@@ -88,7 +88,7 @@ clean_previous_mounts() {
 # Mount each device and add to fstab using UUID
 mount_device() {
     local device="$1"
-    local mount_point="/media/${pi_user}/${device}"
+    local mount_point="/media/${OS_USER}/${device}"
 
     echo "Mounting /dev/$device to $mount_point..."
 
@@ -103,22 +103,22 @@ mount_device() {
 
     # Set ownership and permissions for the mount point
     if [ "$fs_type" == "exfat" ]; then
-        mount_opts="uid=${pi_user},gid=${pi_user},umask=002"
+        mount_opts="uid=${OS_USER},gid=${OS_USER},umask=002"
         $mount_command -o $mount_opts "/dev/$device" "$mount_point"
         if [ $? -ne 0 ]; then
             echo "Error: Failed to mount $device with exfat options"
             exit 1
         fi
-        chown "${pi_user}:${pi_user}" "$mount_point"
+        chown "${OS_USER}:${OS_USER}" "$mount_point"
         chmod 775 "$mount_point"
     elif [ "$fs_type" == "ntfs" ]; then
-        mount_opts="uid=${pi_user},gid=${pi_user},umask=002"
+        mount_opts="uid=${OS_USER},gid=${OS_USER},umask=002"
         $mount_command -o $mount_opts "/dev/$device" "$mount_point"
         if [ $? -ne 0 ]; then
             echo "Error: Failed to mount $device with ntfs options"
             exit 1
         fi
-        chown "${pi_user}:${pi_user}" "$mount_point"
+        chown "${OS_USER}:${OS_USER}" "$mount_point"
         chmod 775 "$mount_point"
     elif [ "$fs_type" == "ext4" ] || [ "$fs_type" == "ext3" ] || [ "$fs_type" == "ext2" ]; then
         $mount_command "/dev/$device" "$mount_point"
@@ -126,7 +126,7 @@ mount_device() {
             echo "Error: Failed to mount $device with ext* options"
             exit 1
         fi
-        chown "${pi_user}:${pi_user}" "$mount_point"
+        chown "${OS_USER}:${OS_USER}" "$mount_point"
         chmod 775 "$mount_point"
     fi
     
@@ -134,9 +134,9 @@ mount_device() {
     local uuid=$(blkid -s UUID -o value "/dev/$device")
     local fstab_opts="defaults,auto,users,rw,nofail"
 
-    # Add user/group options for exfat and ntfs to ensure pi_user has rw access after reboot
+    # Add user/group options for exfat and ntfs to ensure OS_USER has rw access after reboot
     if [ "$fs_type" == "exfat" ] || [ "$fs_type" == "ntfs" ]; then
-        fstab_opts="${fstab_opts},uid=${pi_user},gid=${pi_user},umask=002"
+        fstab_opts="${fstab_opts},uid=${OS_USER},gid=${OS_USER},umask=002"
     fi
 
     if ! grep -qs "UUID=$uuid" /etc/fstab; then
@@ -206,7 +206,7 @@ RequiresMountsFor=$(echo "$mergerfs_sources" | tr ':' ' ')
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/mergerfs "$mergerfs_sources" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
+ExecStart=/usr/bin/mergerfs -f "$mergerfs_sources" "$combined_mount_point" -o defaults,allow_other,category.create=ff,moveonenospc=true,nonempty
 ExecStop=/bin/fusermount -u "$combined_mount_point"
 Restart=on-failure
 RestartSec=5s
