@@ -149,6 +149,10 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "ATID-618.mp4"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "ATID-618")
+    def test_ad(self):
+        text = "hhd800.com@584AD-102.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "AD-102")
 
 # To run the tests
 if __name__ == '__main__':
