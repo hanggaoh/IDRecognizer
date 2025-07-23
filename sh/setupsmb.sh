@@ -13,7 +13,7 @@ command_exists() {
 
 workingDir="$(cd "$(dirname "$0")/.." && pwd)"
 
-pi_user="$PI_USER"
+OS_USER="$OS_USER"
 smb_user="$SMB_USER"
 ssd_path="$SSD_PATH"
 hdd_path="$HDD_PATH"
@@ -24,9 +24,9 @@ logs_path="$workingDir/logs"
 smb_password="$SMB_PASSWORD"
 
 # Check if required environment variables are set
-if [ -z "$pi_user" ] || [ -z "$smb_user" ] || [ -z "$ssd_path" ] || [ -z "$hdd_path" ] || [ -z "$smb_password" ]; then
+if [ -z "$OS_USER" ] || [ -z "$smb_user" ] || [ -z "$ssd_path" ] || [ -z "$hdd_path" ] || [ -z "$smb_password" ]; then
     echo "Error: One or more required environment variables are not set."
-    echo "Please ensure PI_USER, SMB_USER, SSD_PATH, HDD_PATH, and SMB_PASSWORD are set."
+    echo "Please ensure OS_USER, SMB_USER, SSD_PATH, HDD_PATH, and SMB_PASSWORD are set."
     exit 1
 fi
 
@@ -76,8 +76,8 @@ echo "Creating shared directories..."
 
 # Set permissions for the directories
 echo "Setting permissions for the shared directories..."
-sudo chown $pi_user:$pi_user $ssd_path
-sudo chown $pi_user:$pi_user $hdd_path
+sudo chown $OS_USER:$OS_USER $ssd_path
+sudo chown $OS_USER:$OS_USER $hdd_path
 sudo chmod 2775 $ssd_path
 sudo chmod 2775 $hdd_path
 
@@ -108,16 +108,16 @@ ln -s $movie_path /home/$movie_user/movies
 # Set permissions for the logs directory
 echo "Setting permissions for the logs directory..."
 [ ! -d "$logs_path" ] && mkdir -p $logs_path
-sudo chown $pi_user:$pi_user $logs_path
+sudo chown $OS_USER:$OS_USER $logs_path
 sudo chmod 2775 $logs_path
 
 # Add smb_user to the group that owns the shared directories
-sudo usermod -aG $pi_user $smb_user
+sudo usermod -aG $OS_USER $smb_user
 
-# Set group ownership of the shared directories to $pi_user group
-sudo chown -R $pi_user:$pi_user $ssd_path
-sudo chown -R $pi_user:$pi_user $hdd_path
-sudo chown -R $pi_user:$pi_user $logs_path
+# Set group ownership of the shared directories to $OS_USER group
+sudo chown -R $OS_USER:$OS_USER $ssd_path
+sudo chown -R $OS_USER:$OS_USER $hdd_path
+sudo chown -R $OS_USER:$OS_USER $logs_path
 
 # Ensure permissions are set to 2775 (setgid)
 sudo chmod 2775 $ssd_path
