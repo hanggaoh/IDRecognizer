@@ -202,7 +202,6 @@ local mergerfs_sources="$1"
 Description=MergerFS Service for /media/gh/hdd
 Requires=network-online.target local-fs.target
 After=network-online.target local-fs.target
-RequiresMountsFor=$(echo "$mergerfs_sources" | tr ':' ' ')
 
 [Service]
 Type=simple
