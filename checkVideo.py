@@ -102,7 +102,13 @@ def main():
     # Argument parser for command-line arguments
     parser = argparse.ArgumentParser(description="Check video files for metadata issues.")
     parser.add_argument("folder_path", type=str, help="Path to the folder containing video files")
-    parser.add_argument("output_file", type=str, help="Path to the output file for storing results")
+    parser.add_argument(
+        "output_file",
+        type=str,
+        nargs="?",
+        default="broken.txt",
+        help="Path to the output file for storing results (default: broken.txt)"
+    )
     parser.add_argument(
         "--delete",
         action="store_true",
