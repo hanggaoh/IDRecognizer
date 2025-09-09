@@ -5,6 +5,8 @@ from utils.constants import video_extensions
 import subprocess
 import shutil
 import json
+import re
+from abc import ABC, abstractmethod
 
 logger = get_logger()
 
@@ -15,8 +17,9 @@ def find_duplicate_names(folder_path):
             name, ext = os.path.splitext(file_name)
             if ext.lower() in video_extensions:
                 # Check for name.extension and name_N.extension patterns
-                if name.endswith(('_1', '_2', '_3', '_4', '_5', '_6', '_7', '_8', '_9')):
-                    base_name = name[:-2]
+                match = re.match(r"^(.*)_(\d+)$", name)
+                if match:
+                    base_name = match.group(1)
                     original_file = f"{base_name}{ext}"
                     if original_file in files:
                         if original_file not in duplicate_files:
@@ -25,11 +28,14 @@ def find_duplicate_names(folder_path):
                     else:
                         logger.info(f"No original file for dup {file_name}, rename it")
                         shutil.move(os.path.join(folder_path, file_name), os.path.join(folder_path, original_file))
-                elif f"{name}_1{ext}" in files or f"{name}_2{ext}" in files or f"{name}_3{ext}" in files or \
-                     f"{name}_4{ext}" in files or f"{name}_5{ext}" in files or f"{name}_6{ext}" in files or \
-                     f"{name}_7{ext}" in files or f"{name}_8{ext}" in files or f"{name}_9{ext}" in files:
-                    if file_name not in duplicate_files:
-                        duplicate_files[file_name] = []
+                else:
+                    # Check if this file has any _\d+ dups
+                    pattern = re.compile(rf"^{re.escape(name)}_(\d+){re.escape(ext)}$")
+                    dups = [f for f in files if pattern.match(f)]
+                    if dups:
+                        if file_name not in duplicate_files:
+                            duplicate_files[file_name] = []
+                        duplicate_files[file_name].extend(dups)
     
     if duplicate_files:
         logger.info(f"Found potential duplicate video files: {duplicate_files}")
@@ -60,53 +66,100 @@ def is_broken(file_path):
     info = get_media_info(file_path)
     return info is None or info['duration'] == 0
 
-def check_duplicate_videos(folder_path, alternative_folder_path):
-    # find if folder_path files has some files that has name.extension and name_\d.extension and collect those files
-    duplicate_map = find_duplicate_names(folder_path)
-    for original, dups in duplicate_map.items():
+class DuplicateRule(ABC):
+    @abstractmethod
+    def apply(self, original, dups, folder_path, alternative_folder_path):
+        pass
+
+class ReplaceBrokenOriginalRule(DuplicateRule):
+    def apply(self, original, dups, folder_path, alternative_folder_path):
         original_path = os.path.join(folder_path, original)
         orig_info = get_media_info(original_path)
         if is_broken(original_path) or not orig_info:
             logger.info(f"Original file {original} is broken, searching for a valid duplicate to replace it.")
-            replaced = False
             for dup in dups:
                 dup_path = os.path.join(folder_path, dup)
                 if not is_broken(dup_path):
                     logger.info(f"Replacing broken original {original} with duplicate {dup}.")
                     shutil.move(dup_path, original_path)
-                    replaced = True
-                    break
+                    return True  # Rule handled this case
                 else:
                     os.remove(dup_path)
-            if not replaced:
-                logger.info(f"No valid duplicate found to replace broken original {original}.")
-            continue
+            logger.info(f"No valid duplicate found to replace broken original {original}.")
+            return True  # Rule handled this case
+        return False  # Pass to next rule
+
+class RemoveBrokenDuplicateRule(DuplicateRule):
+    def apply(self, original, dups, folder_path, alternative_folder_path):
+        handled = False
+        for dup in dups[:]:
+            dup_path = os.path.join(folder_path, dup)
+            if not get_media_info(dup_path):
+                logger.info(f"Duplicate file {dup} is broken or unreadable, remove it")
+                os.remove(dup_path)
+                dups.remove(dup)
+                handled = True
+        return handled  # Continue to next rule
+
+class KeepHigherResolutionRule(DuplicateRule):
+    def apply(self, original, dups, folder_path, alternative_folder_path):
+        original_path = os.path.join(folder_path, original)
+        orig_info = get_media_info(original_path)
+        if not orig_info:
+            return False
         for dup in dups:
             dup_path = os.path.join(folder_path, dup)
             dup_info = get_media_info(dup_path)
             if not dup_info:
-                logger.info(f"Duplicate file {dup} is broken or unreadable, moving to {alternative_folder_path}")
-                os.remove(dup_path)
                 continue
             if abs(orig_info['duration'] / dup_info['duration'] - 1) < 0.05:
-                # Keep higher resolution
                 orig_res = orig_info['width'] * orig_info['height']
                 dup_res = dup_info['width'] * dup_info['height']
                 if dup_res > orig_res:
-                    logger.info(f"Duplicate {dup} has higher resolution than {original}, moving {original} to {alternative_folder_path}")
-                    shutil.move(original_path, os.path.join(alternative_folder_path, original))
-                    shutil.move(dup_path, original_path)
+                    to_keep_path, to_remove_path = dup_path, original_path
+                    to_keep_name, to_remove_name = dup, original
                 else:
-                    logger.info(f"Moving duplicate {dup} to {alternative_folder_path}")
-                    shutil.move(dup_path, os.path.join(alternative_folder_path, original))
+                    to_keep_path, to_remove_path = original_path, dup_path
+                    to_keep_name, to_remove_name = original, dup
+
+                if alternative_folder_path:
+                    logger.info(f"Moving lower resolution file {to_remove_name} to {alternative_folder_path}")
+                    shutil.move(to_remove_path, os.path.join(alternative_folder_path, to_remove_name))
+                    if to_keep_path != original_path:
+                        shutil.move(to_keep_path, original_path)
+                else:
+                    if to_keep_path != original_path:
+                        shutil.move(to_keep_path, original_path)
+                    os.remove(to_remove_path)
+                    logger.info(f"Removed lower resolution file {to_remove_name}, kept {to_keep_name} at {original_path}")
+                return True
             else:
                 logger.info(f"Duplicate {dup} duration does not match original {original}, skipping.")
+        return False
+
+def check_duplicate_videos(folder_path, alternative_folder_path):
+    duplicate_map = find_duplicate_names(folder_path)
+    rules = [
+        ReplaceBrokenOriginalRule(),
+        RemoveBrokenDuplicateRule(),
+        KeepHigherResolutionRule(),
+    ]
+    for original, dups in duplicate_map.items():
+        for rule in rules:
+            handled = rule.apply(original, dups, folder_path, alternative_folder_path)
+            if handled:
+                break
 
 def main():
     # Argument parser for command-line arguments
     parser = argparse.ArgumentParser(description="Check duplicate videos.")
     parser.add_argument("folder_path", type=str, help="Path to the folder containing video files")
-    parser.add_argument("alternative_folder_path", type=str, help="Path to the output file for storing results")
+    parser.add_argument(
+        "--alternative_folder_path",
+        type=str,
+        default=None,
+        help="Optional path to move duplicates or originals. If not provided, files will not be moved."
+    )
 
     # Parse the arguments
     args = parser.parse_args()
