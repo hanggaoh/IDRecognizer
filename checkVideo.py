@@ -38,6 +38,8 @@ def check_video_files(folder_path, output_file):
     if is_linux():
         install_mediainfo()
 
+    brokenFiles = []
+
     # Open output file in write mode
     with open(output_file, "w") as f_out:
         # Loop through each file in the folder
@@ -85,6 +87,7 @@ def check_video_files(folder_path, output_file):
                         output = result.stdout.decode("utf-8").strip()
                         if not output or result.returncode != 0:
                             f_out.write(f"{filename}\n")
+                            brokenFiles.append(filename)
                             logger.debug(f"File {filename} has issues (ffprobe failed or missing metadata)")
                         else:
                             logger.debug(f"File {filename} passed shallow ffprobe check")
@@ -93,18 +96,32 @@ def check_video_files(folder_path, output_file):
                         logger.debug(f"Error processing {filename} with ffprobe: {str(e)}")
 
     print(f"Check completed. Results saved to {output_file}.")
+    return brokenFiles
 
 def main():
     # Argument parser for command-line arguments
     parser = argparse.ArgumentParser(description="Check video files for metadata issues.")
     parser.add_argument("folder_path", type=str, help="Path to the folder containing video files")
     parser.add_argument("output_file", type=str, help="Path to the output file for storing results")
+    parser.add_argument(
+        "--delete",
+        action="store_true",
+        help="Delete broken video files detected during the check"
+    )
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Call the function with the arguments
-    check_video_files(args.folder_path, args.output_file)
+    brokenFiles = check_video_files(args.folder_path, args.output_file)
+    if args.delete and brokenFiles:
+        for filename in brokenFiles:
+            file_path = os.path.join(args.folder_path, filename)
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted broken file: {filename}")
+            except Exception as e:
+                logger.error(f"Error deleting file {filename}: {str(e)}")
 
 if __name__ == "__main__":
     main()
