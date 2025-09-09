@@ -106,6 +106,16 @@ class TestPathFormatter(unittest.TestCase):
             corrected_path,
             "/dest/JUC-970_B.mp4"
         )
+    
+    def test_get_corrected_path_cds_has_other_letters(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "/mnt/2T/Archive/蒼井空/02-08-23 [AV] Sora Aoi - Let's Go Blue in the Sky!.avi"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/02-08-23.avi"
+        )
 
 if __name__ == '__main__':
     unittest.main()

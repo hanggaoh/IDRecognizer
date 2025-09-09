@@ -24,6 +24,7 @@ patterns = {
     r"([a-z]{2,5})-(\d{2,3})HD([A-E])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
     r"([a-z]{2,5})-(\d{2,3})\.?1080P\s*([A-E])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
     r"([a-z]{2,5})[-_0]*(\d{3})\.?hhb\s*([\d])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",
+    r"(\d{2})[-_](\d{2})[-_](\d{2})": r"\1-\2-\3",
     r'(?<![a-zA-Z])(ID)[-_](\d{3})': r'\1-\2',  # Modified: no a-zA-Z before 'ID'
     r"([a-z]{4,6})(\d{2,3})": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}",
     r'([A-Z]{2,7})[-_/s](?!\d{6,9})(\d{2,5})': r'\1-\2',
