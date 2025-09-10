@@ -90,6 +90,53 @@ class TestFindDuplicateNames(unittest.TestCase):
         result = find_duplicate_names(self.temp_dir)
         # nothing should be flagged (no recognized video extension)
         self.assertEqual(result, {})
+    def test_no_duplicates(self):
+        files = ['unique1.mp4', 'unique2.avi', 'unique3.mkv']
+        self.create_files(files)
+        result = find_duplicate_names(self.temp_dir)
+        self.assertEqual(result, {})
 
+    def test_duplicate_with_mixed_case_extensions(self):
+        files = ['movie.Mp4', 'movie_1.mP4', 'movie_2.MP4']
+        self.create_files(files)
+        result = find_duplicate_names(self.temp_dir)
+        self.assertIn('movie.Mp4', result)
+        self.assertEqual(set(result['movie.Mp4']), {'movie_1.mP4', 'movie_2.MP4'})
+
+    def test_duplicate_with_multiple_groups(self):
+        files = ['alpha.mp4', 'alpha_1.mp4', 'beta.avi', 'beta_1.avi', 'gamma.mkv']
+        self.create_files(files)
+        result = find_duplicate_names(self.temp_dir)
+        self.assertIn('alpha.mp4', result)
+        self.assertIn('alpha_1.mp4', result['alpha.mp4'])
+        self.assertIn('beta.avi', result)
+        self.assertIn('beta_1.avi', result['beta.avi'])
+        self.assertNotIn('gamma.mkv', result)
+
+    def test_duplicate_with_no_original(self):
+        files = ['orphan_1.mp4', 'orphan_2.mp4']
+        self.create_files(files)
+        result = find_duplicate_names(self.temp_dir)
+        # One of the orphans is picked as original
+        self.assertEqual(len(result), 1)
+        orig = list(result.keys())[0]
+        dups = result[orig]
+        self.assertEqual(set([orig] + dups), {'orphan_1.mp4', 'orphan_2.mp4'})
+
+    def test_duplicate_with_subdirectories(self):
+        os.makedirs(os.path.join(self.temp_dir, 'subdir'))
+        files = ['main.mp4', 'main_1.mp4', os.path.join('subdir', 'main_2.mp4')]
+        self.create_files(files)
+        result = find_duplicate_names(self.temp_dir)
+        self.assertIn('main.mp4', result)
+        self.assertIn('main_1.mp4', result['main.mp4'])
+        self.assertIn('main_2.mp4', result['main.mp4'])
+        
+    def test_duplicate_with_leading_zeros_in_suffix(self):
+        files = ['clip.mp4', 'clip_01.mp4', 'clip_002.mp4']
+        self.create_files(files)
+        result = find_duplicate_names(self.temp_dir)
+        self.assertIn('clip.mp4', result)
+        self.assertEqual(set(result['clip.mp4']), {'clip_01.mp4', 'clip_002.mp4'})
 if __name__ == '__main__':
     unittest.main(verbosity=2)

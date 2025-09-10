@@ -11,32 +11,38 @@ from abc import ABC, abstractmethod
 logger = get_logger()
 
 def find_duplicate_names(folder_path):
-    duplicate_files = {}
-    for root, _, files in os.walk(folder_path):
+    from collections import defaultdict
+
+    base_name_map = defaultdict(list)
+    for _, _, files in os.walk(folder_path):
         for file_name in files:
             name, ext = os.path.splitext(file_name)
             if ext.lower() in video_extensions:
-                # Check for name.extension and name_N.extension patterns
-                match = re.match(r"^(.*)_(\d+)$", name)
+                # Remove _N suffix if present for grouping
+                match = re.match(r"^(.*?)(?:_(\d+))?$", name)
                 if match:
                     base_name = match.group(1)
-                    original_file = f"{base_name}{ext}"
-                    if original_file in files:
-                        if original_file not in duplicate_files:
-                            duplicate_files[original_file] = []
-                        duplicate_files[original_file].append(file_name)
-                    else:
-                        logger.info(f"No original file for dup {file_name}, rename it")
-                        shutil.move(os.path.join(folder_path, file_name), os.path.join(folder_path, original_file))
+                    base_name_map[base_name].append(file_name)
+
+    # Only keep groups with more than one file (potential duplicates)
+    duplicate_files = {}
+    for base, files in base_name_map.items():
+        if len(files) > 1:
+            # Find the original (without _N) and dups (with _N)
+            orig = None
+            dups = []
+            for f in files:
+                name, ext = os.path.splitext(f)
+                if re.match(rf"^{re.escape(base)}$", name):
+                    orig = f
                 else:
-                    # Check if this file has any _\d+ dups
-                    pattern = re.compile(rf"^{re.escape(name)}_(\d+){re.escape(ext)}$")
-                    dups = [f for f in files if pattern.match(f)]
-                    if dups:
-                        if file_name not in duplicate_files:
-                            duplicate_files[file_name] = []
-                        duplicate_files[file_name].extend(dups)
-    
+                    dups.append(f)
+            if orig:
+                duplicate_files[orig] = dups
+            else:
+                # If no original, pick one as original and rest as dups
+                duplicate_files[files[0]] = files[1:]
+
     if duplicate_files:
         logger.info(f"Found potential duplicate video files: {duplicate_files}")
     else:
@@ -151,7 +157,6 @@ def check_duplicate_videos(folder_path, alternative_folder_path):
                 break
 
 def main():
-    # Argument parser for command-line arguments
     parser = argparse.ArgumentParser(description="Check duplicate videos.")
     parser.add_argument("folder_path", type=str, help="Path to the folder containing video files")
     parser.add_argument(
@@ -161,10 +166,8 @@ def main():
         help="Optional path to move duplicates or originals. If not provided, files will not be moved."
     )
 
-    # Parse the arguments
     args = parser.parse_args()
 
-    # Call the function with the arguments
     check_duplicate_videos(args.folder_path, args.alternative_folder_path)
 
 

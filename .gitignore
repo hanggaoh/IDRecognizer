@@ -8,3 +8,13 @@ qbittorrent/*
 .env
 .venv/*
 nohup.out
+config/aria2-download/config/aria2.conf
+config/aria2-download/config/aria2.session
+config/aria2-download/config/dht.dat
+config/aria2-download/config/dht6.dat
+config/aria2-download/config/LICENSE
+config/aria2-download/config/script.conf
+config/aria2-download/config/script/clean.sh
+config/aria2-download/config/script/core
+config/aria2-download/config/script/delete.sh
+config/aria2-download/config/script/tracker.sh
