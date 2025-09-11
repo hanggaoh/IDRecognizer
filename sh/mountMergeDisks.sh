@@ -97,7 +97,8 @@ mount_device() {
         echo "Error: Failed to create mount point for $device"
         exit 1
     fi
-
+    # Add a write lock to prevent writing to the mount point if the disk is not mounted
+    chattr +i "$mount_point"
     local fs_type=$(lsblk -no FSTYPE "/dev/$device")
     local mount_command="mount"
 
