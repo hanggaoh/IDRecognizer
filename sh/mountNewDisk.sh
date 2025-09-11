@@ -1,6 +1,26 @@
 #!/bin/bash
 # filepath: /home/gh/IDRecognizer/sh/formatNewDisk.sh
 
+if [[ "$1" == "-u" ]]; then
+    if [[ $# -ne 2 ]]; then
+        echo "Usage: $0 -u <disk>"
+        exit 1
+    fi
+    DISK="$2"
+    PART="${DISK}1"
+    UUID=$(sudo blkid -s UUID -o value "$PART")
+    if mountpoint -q "/mnt/"*; then
+        sudo umount "$PART" || true
+    fi
+    if [[ -n "$UUID" ]]; then
+        sudo sed -i "/$UUID/d" /etc/fstab
+        echo "Removed $PART from /etc/fstab and unmounted."
+    else
+        echo "UUID for $PART not found."
+    fi
+    exit 0
+fi
+
 if [[ $# -ne 2 ]]; then
     echo "Usage: $0 <disk> <label>"
     echo "Example: $0 /dev/sdh mountedDisk"
@@ -10,6 +30,8 @@ fi
 DISK="$1"
 LABEL="$2"
 MOUNT_POINT="/mnt/$LABEL"
+
+echo "Formatting $DISK with label $LABEL and mounting to $MOUNT_POINT..."
 
 
 echo "WARNING: This will erase ALL data on $DISK!"
@@ -50,5 +72,4 @@ fi
 sudo mount "$MOUNT_POINT"
 
 echo "Done! $DISK is now formatted, mounted at $MOUNT_POINT, and set to auto-mount."
-
 
