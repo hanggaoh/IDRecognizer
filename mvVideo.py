@@ -105,7 +105,10 @@ def moveVideos(video_files, destination_dir):
         base_name = formatedName[0].upper() if len(formatedName) > 0 else os.path.splitext(file_name)[0]
         original_path = os.path.join(original_dir, file_name)
         destination_name = resolve_destination_name(original_path, destination_dir, base_name, extension)
-
+        if is_broken(original_path):
+            logger.info(f"Skipping {file_name} as it is detected as broken.")
+            os.remove(original_path)
+            continue
         if destination_name is None:
             logger.info(f"Skipping {file_name} as a higher resolution file already exists.")
             os.remove(original_path)
