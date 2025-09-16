@@ -34,10 +34,9 @@ def main(argv=None):
                 reformated_name = PathFormatter.get_corrected_path(dest_dir, original_path)
                 print(f"Original: {original_path}, Moved: {moved_path}, Dest Dir: {dest_dir}")
                 print(f"Reformatted Name: {reformated_name}")
-                print(f"Renaming {moved_path} to {reformated_name}")
-                if os.path.exists(moved_path):
+                if os.path.isfile(moved_path):
+                    print(f"Renaming {moved_path} to {reformated_name}")
                     os.rename(moved_path, reformated_name)
-                # os.rename(moved_path, reformated_name)
 
 #%%
 
