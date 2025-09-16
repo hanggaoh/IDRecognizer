@@ -116,6 +116,70 @@ class TestPathFormatter(unittest.TestCase):
             corrected_path,
             "/dest/02-08-23.avi"
         )
+    def test_get_corrected_path_letter_with_digit(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/[3D-1080P]MCB3DBD-04/MCB3DBD-04.mkv"
+        )
 
+        self.assertEqual(
+            corrected_path,
+            "/dest/MCB3DBD-04.mkv"
+        )
+    
+    def test_get_corrected_path_letter_with_digi_1(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "/sdcard/Android/data/com.xunlei.downloadprovider/files/ThunderDownload/[3D-1080P]CW3D2BD-05/3D Catwalk Poison 05 - Megumi Shino.mkv"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/CW3D2BD-05.mkv"
+        )
+
+    def test_should_not_find_pattern_in_base(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "PT-142-DVD/dioguitar23.net_PT-142.ISO"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/PT-142.ISO"
+        )
+    def test_disk_in_name(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "Fairy FMX-003/[FAIRY] FMX-003-diskC-1.avi"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/FMX-003_C.avi"
+        )
+    def test_disk_in_name_d(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "Sky.High.Premium.7.SKY179.DiSC2.DVDRip.XviD.JAV.Uncensored-JapanX/japanx-sky179d2-cd1.avi"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/SKY-179_2.avi"
+        )
+    def test_3_letter_4_digit(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "FDD2050(AVI)/FDD2050.XviD.avi"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/FDD-2050.avi"
+        )
+    def test_base_name_should_not_be_matched(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "080108-819/whole2048.XviD.avi"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/080108-819.avi"
+        )
 if __name__ == '__main__':
     unittest.main()

@@ -27,7 +27,7 @@ class PathFormatter:
     @staticmethod
     def choose_basename_for_destination_file(matches_folder, matches_basename, original_name):
         corrected_basename = original_name
-        if len(matches_basename) > 0:
+        if len(matches_basename) > 0 and "whole" not in matches_basename[0]:
             logger.debug("Matches found in basename, using the first match.")
             corrected_basename = matches_basename[0]
         elif len(matches_folder) > 0:
