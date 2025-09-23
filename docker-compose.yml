@@ -1,0 +1,30 @@
+services:
+  adb-listener:
+    # Define the build context and Dockerfile location
+    build:
+      context: . # The context is the project root directory
+      dockerfile: android/Dockerfile # Path to the Dockerfile from the root
+    container_name: adb_listener
+    restart: unless-stopped
+
+    # Add host.docker.internal to extra_hosts for compatibility.
+    # This ensures the container can resolve the host's IP address.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    environment:
+      # Point the ADB client inside the container to the ADB server running on the Mac host.
+      - ADB_SERVER_SOCKET=tcp:host.docker.internal:5037
+
+    env_file:
+      - .env
+
+    volumes:
+      # Map the destination folder for pulled videos to a host directory.
+      # The container will write to the path specified by ADB_PULL_DESTINATION in your .env file.
+      # This line maps that container path to a path on your host.
+      # IMPORTANT: Replace './pulled_videos' with the actual path on your host machine.
+      - ${ADB_PULL_DESTINATION}:${ADB_PULL_DESTINATION}
+
+      # Mount the host's .android directory to share ADB keys with the container.
+      - ~/.android:/root/.android
