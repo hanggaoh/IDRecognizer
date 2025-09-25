@@ -4,7 +4,7 @@ FROM debian:bullseye-slim
 
 # Install dependencies: adb, python3, bash, and procps (for `ps` command if needed)
 RUN apt-get update && \
-    apt-get install -y adb python3 procps bash && \
+    apt-get install -y adb python3 procps mediainfo bash && \
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container
