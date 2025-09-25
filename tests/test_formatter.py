@@ -172,6 +172,7 @@ class TestPathFormatter(unittest.TestCase):
             corrected_path,
             "/dest/FDD-2050.avi"
         )
+        
     def test_base_name_should_not_be_matched(self):
         corrected_path = PathFormatter.get_corrected_path(
             "/dest", "080108-819/whole2048.XviD.avi"
@@ -181,5 +182,26 @@ class TestPathFormatter(unittest.TestCase):
             corrected_path,
             "/dest/080108-819.avi"
         )
+
+    def test_base_name_five_digits(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "kiwvr-675/4k2.com@kiwvr00675_1_8k.mp4"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/KIWVR-00675.mp4"
+        )
+
+    def test_base_name_contains_letter(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "MKD-S29-DVD/hotavxxx.com_MKD-S29.ISO"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/MKD-S29.ISO"
+        )
+
 if __name__ == '__main__':
     unittest.main()
