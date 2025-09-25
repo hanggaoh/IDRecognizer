@@ -15,7 +15,7 @@ patterns = {
     r'(?i)(\d{6})[-_](\d{2,3}).*(10mu)': r'\3-\1-\2',
     r'(?i)(carib|1pon).*(\d{6})[-_](\d{3}).*': r'\1-\2-\3',
     r'(\d{6})[-_](\d{3})': r'\1-\2',
-    r'([nNkK]\d{4})': r'\1',
+    r'(?<![\w])([nNkK]\d{4})': r'\1',
     r"([a-z]{2,5})[-_]?(\d{2,3})[-_](\d{1,2})(?!(k))": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",
     r"([a-z]{2,5})-(\d{2,3})[-_]?cd([\d]{1,2})": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",
     r"(?i)([a-z]{2,5})[-_]?(\d{2,3})[-_]?(?:cd|dis[ck]|d)([\d\w]{1,2})": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(1).upper()}",

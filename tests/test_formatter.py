@@ -172,7 +172,7 @@ class TestPathFormatter(unittest.TestCase):
             corrected_path,
             "/dest/FDD-2050.avi"
         )
-        
+
     def test_base_name_should_not_be_matched(self):
         corrected_path = PathFormatter.get_corrected_path(
             "/dest", "080108-819/whole2048.XviD.avi"
@@ -201,6 +201,16 @@ class TestPathFormatter(unittest.TestCase):
         self.assertEqual(
             corrected_path,
             "/dest/MKD-S29.ISO"
+        )
+        
+    def test_base_name_contains_open(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "(OPEN0705).avi"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/OPEN-0705.avi"
         )
 
 if __name__ == '__main__':
