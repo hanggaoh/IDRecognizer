@@ -20,8 +20,8 @@ while true; do
   # First, check if the server is even reachable and a device is connected
   server_state=$(adb get-state 2>/dev/null)
   if [ "$server_state" != "device" ]; then
-      echo "ADB server not found or no device connected. State: '$server_state'. Retrying in 30s..."
-      sleep 30
+      echo "ADB server not found or no device connected. State: '$server_state'. Retrying in 60s..."
+      sleep 60
       continue
   fi
 
@@ -42,6 +42,6 @@ while true; do
   fi
 
   # Wait for a short time before checking again
-  echo "Check complete. Waiting 30 seconds."
-  sleep 30
+  echo "Check complete. Waiting 60 seconds."
+  sleep 60
 done
