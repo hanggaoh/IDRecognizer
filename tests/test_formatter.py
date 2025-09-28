@@ -212,6 +212,15 @@ class TestPathFormatter(unittest.TestCase):
             corrected_path,
             "/dest/OPEN-0705.avi"
         )
+    def test_base_name_means_nothing(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "WHX-019 素人AV21歳OL_水咲あかね/000352.mkv"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/WHX-019.mkv"
+        )
 
 if __name__ == '__main__':
     unittest.main()
