@@ -41,28 +41,10 @@ echo "$(timestamp) Parent folder set to: $parent_folder"
 > "$temp_file_list"
 
 # Capture the file list using adb shell and store it in a temporary file
-adb shell <<EOF > "$temp_file_list"
-find "$parent_folder" -type f \( \
-  -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.webm" -o -iname "*.mpg" -o -iname "*.mpeg" -o -iname "*.m4v" -o -iname "*.3gp" -o -iname "*.3g2" -o -iname "*.vob" -o -iname "*.ogv" -o -iname "*.iso" -o -iname "*.ts" -o -iname "*.rmvb"  -o -iname "*.rm"\
+adb shell 'find "'"$parent_folder"'" -type f \( \
+  -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.webm" -o -iname "*.mpg" -o -iname "*.mpeg" -o -iname "*.m4v" -o -iname "*.3gp" -o -iname "*.3g2" -o -iname "*.vob" -o -iname "*.ogv" -o -iname "*.iso" -o -iname "*.ts" -o -iname "*.rmvb" -o -iname "*.rm" \
   -o -iname "*.asf" -o -iname "*.f4v" -o -iname "*.divx" -o -iname "*.m2ts" -o -iname "*.mts" -o -iname "*.dat" -o -iname "*.amv" -o -iname "*.mpe" -o -iname "*.mp2" -o -iname "*.mpv" -o -iname "*.svi" -o -iname "*.mxf" -o -iname "*.roq" -o -iname "*.nsv" -o -iname "*.drc" -o -iname "*.ogm" -o -iname "*.wtv" -o -iname "*.yuv" -o -iname "*.viv" -o -iname "*.bik" -o -iname "*.evo" \
-\) | while read video_file; do
-  dir=\$(dirname "\$video_file")
-  base_video_file=\$(basename "\$video_file")
-
-  js_exists=\$(ls -a "\$dir" | grep -Fc "\${base_video_file}.js")
-  tail_exists=\$(ls -a "\$dir" | grep -Fc "\${base_video_file}.tail")
-
-  if [ "\$js_exists" -eq 0 ] && [ "\$tail_exists" -eq 0 ]; then
-    echo "\$video_file"
-  # else
-  #   # Check for .torrent file in the directory
-  #   torrent_file=\$(find "\$dir" -maxdepth 1 -iname "*.torrent" | grep -o "[^/]*\.torrent" | head -n 1)
-  #   if [ -n "\$torrent_file" ]; then
-  #     echo "\$dir/\$torrent_file"
-  #   fi
-  fi
-done
-EOF
+\) -exec sh -c '\''video_file="$0"; if [ ! -f "${video_file}.js" ] && [ ! -f "${video_file}.tail" ]; then echo "$video_file"; fi'\'' {} \;' > "$temp_file_list"
 
 cat "$temp_file_list"
 
