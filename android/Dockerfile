@@ -4,7 +4,7 @@ FROM debian:bullseye-slim
 
 # Install dependencies: adb, python3, bash, and procps (for `ps` command if needed)
 RUN apt-get update && \
-    apt-get install -y adb python3 procps mediainfo bash && \
+    apt-get install -y adb python3 procps mediainfo bash ffmpeg&& \
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container
@@ -21,6 +21,8 @@ COPY utils/ ./utils/
 COPY matcher/ ./matcher/
 COPY logger_setup.py ./logger_setup.py
 COPY __init__.py ./__init__.py
+COPY checkDups.py ./checkDups.py
+COPY checkVideo.py ./checkVideo.py
 
 
 # Create the logs directory and make scripts executable

@@ -13,7 +13,7 @@ pattern = re.compile(r'Pulling\s+(.*?)\s+to\s+(.*)')
 
 def build_parser():
     p = argparse.ArgumentParser(description="Demo")
-    p.add_argument("--dest_dir", default="./data", help="Path to data dir")
+    p.add_argument("--dest_dir", default=None, help="Path to data dir")
     return p
 
 def main(argv=None):
