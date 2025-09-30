@@ -42,24 +42,27 @@ echo "$(timestamp) Parent folder set to: $parent_folder"
 
 # Capture the file list using adb shell and store it in a temporary file
 adb shell <<EOF > "$temp_file_list"
-find "$parent_folder" -type f \( \
-  -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.webm" -o -iname "*.mpg" -o -iname "*.mpeg" -o -iname "*.m4v" -o -iname "*.3gp" -o -iname "*.3g2" -o -iname "*.vob" -o -iname "*.ogv" -o -iname "*.iso" -o -iname "*.ts" -o -iname "*.rmvb"  -o -iname "*.rm"\
+# Define the parent folder on the remote shell
+parent_folder="$parent_folder"
+
+# Use find to list all video files, safely handling all characters
+find "\$parent_folder" -type f \( \
+  -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.webm" -o -iname "*.mpg" -o -iname "*.mpeg" -o -iname "*.m4v" -o -iname "*.3gp" -o -iname "*.3g2" -o -iname "*.vob" -o -iname "*.ogv" -o -iname "*.iso" -o -iname "*.ts" -o -iname "*.rmvb"  -o -iname "*.rm" \
   -o -iname "*.asf" -o -iname "*.f4v" -o -iname "*.divx" -o -iname "*.m2ts" -o -iname "*.mts" -o -iname "*.dat" -o -iname "*.amv" -o -iname "*.mpe" -o -iname "*.mp2" -o -iname "*.mpv" -o -iname "*.svi" -o -iname "*.mxf" -o -iname "*.roq" -o -iname "*.nsv" -o -iname "*.drc" -o -iname "*.ogm" -o -iname "*.wtv" -o -iname "*.yuv" -o -iname "*.viv" -o -iname "*.bik" -o -iname "*.evo" \
-\) | while read video_file; do
+\) -print | while read -r video_file; do
+
+  # Extract directory and base filename safely
   dir=\$(dirname "\$video_file")
   base_video_file=\$(basename "\$video_file")
 
-  js_exists=\$(ls -a "\$dir" | grep -Fc "\${base_video_file}.js")
-  tail_exists=\$(ls -a "\$dir" | grep -Fc "\${base_video_file}.tail")
+  # Construct the full, absolute path for the unfinished files
+  # Correct format: /dir/.basename.ext.tail
+  js_file_path="\${dir}/.\${base_video_file}.js"
+  tail_file_path="\${dir}/.\${base_video_file}.tail"
 
-  if [ "\$js_exists" -eq 0 ] && [ "\$tail_exists" -eq 0 ]; then
+  # Use test -e (or [ -e ]) to check for existence
+  if ! [ -e "\$js_file_path" ] && ! [ -e "\$tail_file_path" ]; then
     echo "\$video_file"
-  # else
-  #   # Check for .torrent file in the directory
-  #   torrent_file=\$(find "\$dir" -maxdepth 1 -iname "*.torrent" | grep -o "[^/]*\.torrent" | head -n 1)
-  #   if [ -n "\$torrent_file" ]; then
-  #     echo "\$dir/\$torrent_file"
-  #   fi
   fi
 done
 EOF
@@ -96,26 +99,27 @@ trap 'echo "Interrupted. Cleaning up $sanitized_filename"; [ -f "$sanitized_file
       continue
     fi
 
-    # Use properly quoted paths for adb pull
-    adb shell "cat \"$video_file\"" | cat > "$sanitized_filename"
+    adb shell "cat \"$video_file\"" | cat > "$sanitized_filename.partial"
     adb_status=$?
 
-    # Check if the adb pull command was successful
+    # Check status and perform cleanup (using .partial suffix logic)
     if [ $adb_status -eq 0 ]; then
-    echo "$(timestamp) Successfully pulled $video_file. Deleting from device."
-
-    # Use properly quoted paths for adb rm
-    adb shell "rm \"$video_file\""
-    if adb shell "[ ! -f \"$video_file\" ]"; then
-      echo "$(timestamp) Successfully deleted $video_file from the device."
+      mv "$sanitized_filename.partial" "$sanitized_filename"
+      echo "$(timestamp) Successfully pulled $video_file. Deleting from device."
+      adb shell "rm \"$video_file\""
+      if adb shell "[ ! -f \"$video_file\" ]"; then
+        echo "$(timestamp) Successfully deleted $video_file from the device."
+      else
+        echo "$(timestamp) Failed to delete $video_file from the device."
+      fi
     else
-      echo "$(timestamp) Failed to delete $video_file from the device."
-    fi
-    else
-    echo "$(timestamp) Failed to pull $video_file. Skipping deletion."
-    if [ -f "$sanitized_filename" ]; then
-      echo "$(timestamp) Partial file exists. Deleting $sanitized_filename."
-      rm "$sanitized_filename"
-    fi
+      echo "$(timestamp) Failed to pull $video_file (ADB exit code $adb_status). Skipping deletion."
+      if [ -f "$sanitized_filename.partial" ]; then
+        echo "$(timestamp) Partial file exists. Deleting $sanitized_filename.partial."
+        rm "$sanitized_filename.partial"
+      elif [ -f "$sanitized_filename" ]; then 
+        echo "$(timestamp) Partial file exists under final name. Deleting $sanitized_filename."
+        rm "$sanitized_filename"
+      fi
     fi
   done 3< "$temp_file_list"
