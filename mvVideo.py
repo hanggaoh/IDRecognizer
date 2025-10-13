@@ -96,7 +96,7 @@ def copy_file_with_logging(original_path, destination_dir, destination_name, log
         logger.error(f"An error occurred while copying {original_path}: {e}")
         raise
 
-def moveVideos(video_files, destination_dir):
+def moveVideos(video_files, destination_dir, remove=True):
     for original_dir, file_name in video_files:
         logger.debug(f"{file_name}")
         formatedName = match_and_format(file_name, patterns)
@@ -118,12 +118,16 @@ def moveVideos(video_files, destination_dir):
         copy_file_with_logging(original_path, destination_dir, destination_name, logger)
         
         # Remove the original file after successful copy
-        os.remove(original_path)
+        if remove:
+            try:
+                os.remove(original_path)
+            except Exception as e:
+                logger.error(f"Failed to remove original file {original_path}: {e}")
         logger.debug("Moving complete")
 
-def findMoveVideos(source_folder, destination_folder):
+def findMoveVideos(source_folder, destination_folder, remove=True):
     video_files = find_videos(source_folder)
-    moveVideos(video_files, destination_folder)
+    moveVideos(video_files, destination_folder, remove)
 
 def check_disk_usage(directory, threshold):
     """Check if the disk usage of the given directory is above the threshold percentage."""
@@ -140,8 +144,9 @@ if __name__ == "__main__":
     source_folder = sys.argv[1]
     destination_folder = sys.argv[2]
     threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 0
+    remove = bool(int(sys.argv[4])) if len(sys.argv) > 4 else True
        
     if check_disk_usage(source_folder, threshold):
-        findMoveVideos(source_folder, destination_folder)
+        findMoveVideos(source_folder, destination_folder, remove)
     else:
         logger.info(f"Disk usage of {source_folder} is below the threshold of {threshold}%. Skipping operation.")
