@@ -21,7 +21,7 @@ patterns = {
     r"(?i)([a-z]{2,5})[-_]?(\d{2,3})[-_]?(?:cd|dis[ck]|d)([\d\w]{1,2})": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(1).upper()}",
     r"([a-z]{2,5})[-_]?(\d{2,3})[-_]?([a-f]{1})(?!(hd|v))": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
     r"([a-z]{2,5})-(\d{2,3})[-_]?([A-Ea-e])(?!(v))": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
-    r"([a-z]{2,5})-(\d{2,3})[\s]+([A-Ea-e])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
+    r"([a-z]{2,5})-(\d{2,3})[\s]+([A-Ea-e])(?![a-zA-Z])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
     r"([a-z]{2,5})-(\d{2,3})HD([A-E])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
     r"([a-z]{2,5})-(\d{2,3})\.?1080P\s*([A-E])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).upper()}",
     r"([a-z]{2,5})[-_0]*(\d{3})\.?hhb\s*([\d])": lambda m: f"{m.group(1)}-{m.group(2).zfill(3)}_{m.group(3).zfill(2).upper()}",

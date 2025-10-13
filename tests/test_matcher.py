@@ -161,6 +161,10 @@ class TestMatchAndFormat(unittest.TestCase):
         text = "hhd800.com@TASTE-93.mp4"
         result = matcher.match_and_format(text, patterns)
         self.assertEqual(result[0], "TASTE-93")
+    def test_multiple_letters_after_number(self):
+        text = "WRE】TYOD-177 baimujuedi.mp4"
+        result = matcher.match_and_format(text, patterns)
+        self.assertEqual(result[0], "TYOD-177")
 # To run the tests
 if __name__ == '__main__':
     unittest.main()
