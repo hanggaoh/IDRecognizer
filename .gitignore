@@ -18,3 +18,6 @@ config/aria2-download/config/script/clean.sh
 config/aria2-download/config/script/core
 config/aria2-download/config/script/delete.sh
 config/aria2-download/config/script/tracker.sh
+broken.txt
+missing.txt
+output_missing.txt
