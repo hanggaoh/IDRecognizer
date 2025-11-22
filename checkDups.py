@@ -116,7 +116,7 @@ class KeepHigherResolutionRule(DuplicateRule):
         for dup in dups:
             dup_path = os.path.join(folder_path, dup)
             dup_info = get_media_info(dup_path)
-            if not dup_info:
+            if not dup_info or dup_info['duration'] == 0:
                 continue
             if abs(orig_info['duration'] / dup_info['duration'] - 1) < 0.05:
                 orig_res = orig_info['width'] * orig_info['height']
