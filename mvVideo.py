@@ -9,22 +9,95 @@ import shutil
 
 from checkDups import is_broken
 from logger_setup import get_logger
+import cv2
+import ffmpeg
 
 logger = get_logger()
 
 def is_same_file(src, dst):
-    try:
-        return os.path.getsize(src) == os.path.getsize(dst)
-    except Exception:
-        return False
+    def get_video_duration(path):
+        try:
+            cap = cv2.VideoCapture(path)
+            if not cap.isOpened():
+                return None
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            cap.release()
+            if fps > 0:
+                return frame_count / fps
+            return None
+        except Exception:
+            return None
 
-def get_high_res_file(src, dst):
-    # Placeholder: you can implement a better logic (e.g., by resolution, bitrate, etc.)
-    # For now, keep the larger file
-    return src if os.path.getsize(src) >= os.path.getsize(dst) else dst
+    dur_src = get_video_duration(src)
+    dur_dst = get_video_duration(dst)
+    if dur_src is None or dur_dst is None:
+        return False
+    threshold = 0.02  # 2% difference allowed
+    return abs(dur_src - dur_dst) / max(dur_src, dur_dst) < threshold
+
+def compare_video_resolutions(src, dst):
+    # Use OpenCV to compare video resolutions (width x height)
+    def get_resolution(path):
+        try:
+            cap = cv2.VideoCapture(path)
+            if not cap.isOpened():
+                return (0, 0)
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            cap.release()
+            return (width, height)
+        except Exception:
+            return (0, 0)
+
+    res_src = get_resolution(src)
+    res_dst = get_resolution(dst)
+
+    if (res_src[0] * res_src[1]) > (res_dst[0] * res_dst[1]):
+        return 1  # Source is higher resolution
+    elif (res_src[0] * res_src[1]) < (res_dst[0] * res_dst[1]):
+        return -1  # Destination is higher resolution
+    else:
+        return 0  # Resolutions are the same
+
+def is_better_codec(src_path, dst_path):
+    def get_codec(path):
+        try:
+            probe = ffmpeg.probe(path)
+            for stream in probe['streams']:
+                if stream['codec_type'] == 'video':
+                    return stream.get('codec_name', '')
+        except Exception:
+            return ''
+        return ''
+
+    # Define codec efficiency order (higher index = more efficient)
+    codec_efficiency = [
+        'mpeg2video',  # Legacy, very low efficiency
+        'vp8',         # WebM baseline, similar to H.264
+        'h263',        # Older mobile codec, slightly better than MPEG-2
+        'h264',        # Widely used, good balance
+        'theora',      # Open-source, similar to VP8
+        'hevc',        # High efficiency, ~50% better than H.264
+        'vp9',         # Comparable to HEVC, royalty-free
+        'av1',         # Most efficient mainstream codec
+        'vvc',         # Versatile Video Coding (H.266), ~30% better than HEVC/AV1
+        'evc',         # Essential Video Coding, designed for licensing simplicity
+        'lc-evc',      # Low Complexity EVC, trade-off between speed and efficiency
+    ]
+
+    def codec_rank(codec):
+        try:
+            return codec_efficiency.index(codec)
+        except ValueError:
+            return -1  # Unknown codec, treat as least efficient
+
+    src_codec = get_codec(src_path)
+    dst_codec = get_codec(dst_path)
+    return codec_rank(src_codec) > codec_rank(dst_codec)
+
 
 def resolve_destination_name(original_path, destination_dir, base_name, ext, attempt=0):
-    # Compose candidate name
     if attempt == 0:
         candidate_name = f"{base_name}.{ext}"
     else:
@@ -34,23 +107,24 @@ def resolve_destination_name(original_path, destination_dir, base_name, ext, att
     if not os.path.exists(candidate_path):
         return candidate_name  # No conflict
 
-    # If file exists, check if it's broken
     if is_broken(candidate_path):
         logger.info(f"Destination file {candidate_path} is broken. Will replace.")
         return candidate_name  # Replace broken file
 
-    # If not broken, check if they are the same file
     if is_same_file(original_path, candidate_path):
-        # Keep the higher resolution (larger) file
-        high_res = get_high_res_file(original_path, candidate_path)
-        if high_res == original_path:
+        resolution_status = compare_video_resolutions(original_path, candidate_path)
+        if resolution_status == 1:
             logger.info(f"Replacing {candidate_path} with higher resolution {original_path}")
             return candidate_name  # Replace with higher res
-        else:
+        elif resolution_status == -1:
             logger.info(f"Keeping existing {candidate_path} (higher resolution)")
             return None  # Skip moving
-
-    # Otherwise, try next candidate with incremented suffix
+        elif is_better_codec(original_path, candidate_path):
+            logger.info(f"Replacing {candidate_path} with more efficient codec from {original_path}")
+            return candidate_name  # Replace with better codec
+        else:
+            logger.info(f"Keeping existing {candidate_path} (higher resolution)")
+            return None
     return resolve_destination_name(original_path, destination_dir, base_name, ext, attempt + 1)
 
 def find_videos(directory):
@@ -67,7 +141,7 @@ def copy_file_with_logging(original_path, destination_dir, destination_name, log
     destination_path = os.path.join(destination_dir, destination_name)
     try:
         # Get disk usage
-        total, used, free = shutil.disk_usage(destination_dir)
+        _, _, free = shutil.disk_usage(destination_dir)
         file_size = os.path.getsize(original_path)
 
         # Check for sufficient disk space
@@ -102,7 +176,10 @@ def moveVideos(video_files, destination_dir, remove=True):
         formatedName = match_and_format(file_name, patterns)
         extension = file_name.split(".")[-1]
         logger.debug(f"formatedName: {formatedName}, extension: {extension}")
-        base_name = formatedName[0].upper() if len(formatedName) > 0 else os.path.splitext(file_name)[0]
+        if formatedName and isinstance(formatedName, (list, tuple)) and len(formatedName) > 0:
+            base_name = str(formatedName[0]).upper()
+        else:
+            base_name = os.path.splitext(file_name)[0]
         original_path = os.path.join(original_dir, file_name)
         destination_name = resolve_destination_name(original_path, destination_dir, base_name, extension)
 
@@ -120,7 +197,8 @@ def moveVideos(video_files, destination_dir, remove=True):
         # Remove the original file after successful copy
         if remove:
             try:
-                os.remove(original_path)
+                if os.path.exists(destination_name):
+                    os.remove(original_path)
             except Exception as e:
                 logger.error(f"Failed to remove original file {original_path}: {e}")
         logger.debug("Moving complete")
