@@ -221,6 +221,16 @@ class TestPathFormatter(unittest.TestCase):
             corrected_path,
             "/dest/WHX-019.mkv"
         )
+    def test_base_name_long_with_digit(self):
+        corrected_path = PathFormatter.get_corrected_path(
+            "/dest", "AVOPVR-108_1.mp4"
+        )
+
+        self.assertEqual(
+            corrected_path,
+            "/dest/AVOPVR-108_01.mp4"
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
